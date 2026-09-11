@@ -449,44 +449,63 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
-        document.getElementById('downloadBtn').addEventListener('click', function() {
+            document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ Đang lưu...';
+            btn.innerHTML = '⏳ Đang xử lý...';
 
-            canvas.toBlob(function(blob) {
+            canvas.toBlob(async function(blob) {
                 if (!blob) {
                     alert("Có lỗi xảy ra!");
                     btn.innerHTML = originalText;
                     return;
                 }
                 
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `Timemark_Studio_${new Date().getTime()}.jpg`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-                
-                btn.innerHTML = '✅ Đã lưu vào Thư Viện!';
-                btn.style.backgroundColor = '#2980b9'; 
-                
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.style.backgroundColor = ''; 
-                    
-                    resetToFreshState(); 
-                    bottomMenu.style.display = 'block'; 
+                const fileName = `Timemark_Studio_${new Date().getTime()}.jpg`;
+                const file = new File([blob], fileName, { type: 'image/jpeg' });
 
-                    // Xóa trắng ô ghi chú để chụp hình mới
-                    document.getElementById('customTextInput').value = '';
-
-                    if (lastUsedMode === 'webcam') {
-                        startCameraBtn.click();
+                try {
+                    // Kiểm tra xem máy có hỗ trợ Share hệ thống không (iOS/Android đều hỗ trợ rất tốt)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        // Gọi bảng menu gốc của iPhone / Android lên
+                        await navigator.share({
+                            files: [file],
+                            title: 'Timemark Image'
+                        });
+                    } else {
+                        // Trực tiếp tải xuống nếu dùng trên Máy tính (PC)
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
                     }
-                }, 1500); 
+
+                    // --- CHẠY HIỆU ỨNG THÀNH CÔNG VÀ RESET TRẠNG THÁI ---
+                    btn.innerHTML = '✅ Đã hoàn tất!';
+                    btn.style.backgroundColor = '#2980b9'; 
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.backgroundColor = ''; 
+                        
+                        resetToFreshState(); 
+                        bottomMenu.style.display = 'block'; 
+                        document.getElementById('customTextInput').value = '';
+
+                        // Tự động bật lại camera In-app nếu vừa dùng
+                        if (lastUsedMode === 'webcam') {
+                            startCameraBtn.click();
+                        }
+                    }, 1500);
+
+                } catch (error) {
+                    // Xử lý khi người dùng ấn chữ "Hủy" hoặc vuốt tắt menu Share trên điện thoại
+                    btn.innerHTML = originalText;
+                }
                 
             }, 'image/jpeg', 0.95); 
         });
