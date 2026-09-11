@@ -307,31 +307,15 @@
             lastUsedMode = 'webcam';
             resetToFreshState();
             try {
-                // NÂNG CẤP: Ép độ phân giải lên chuẩn 4K và thử kích hoạt lấy nét liên tục (nếu HĐH cho phép)
                 currentStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment', 
-                        width: { ideal: 3840 }, 
-                        height: { ideal: 2160 },
-                        advanced: [{ focusMode: "continuous" }] 
-                    } 
+                    video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
                 });
                 videoFeed.srcObject = currentStream;
                 bottomMenu.style.display = 'none'; 
                 cameraContainer.style.display = 'block';
             } catch (err) {
-                // Kế hoạch B: Nếu điện thoại cũ không kéo nổi 4K, tự động hạ xuống mức cơ bản
-                try {
-                    currentStream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { facingMode: 'environment' } 
-                    });
-                    videoFeed.srcObject = currentStream;
-                    bottomMenu.style.display = 'none'; 
-                    cameraContainer.style.display = 'block';
-                } catch (fallbackErr) {
-                    alert("Không thể mở Camera. Vui lòng cấp quyền máy ảnh!");
-                    bottomMenu.style.display = 'block';
-                }
+                alert("Không thể mở Camera. Vui lòng cấp quyền máy ảnh!");
+                bottomMenu.style.display = 'block';
             }
         });
 
