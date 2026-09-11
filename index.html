@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timemark Studio Pro - V6</title>
+    <title>Timemark Studio Pro - V6.1</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <style>
@@ -24,15 +24,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh; /* Quan trọng: Đảm bảo body chiếm hết chiều cao để đẩy menu xuống đáy */
+            min-height: 100vh;
             box-sizing: border-box;
         }
 
-        /* KHU VỰC 1: VIEW ẢNH (Nằm trên cùng) */
+        /* KHU VỰC 1: VIEW ẢNH */
         #viewArea {
             width: 100%;
             max-width: 600px;
-            flex: 1; /* Tự động giãn để đẩy khối Menu bên dưới xuống đáy */
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -40,7 +40,6 @@
             margin-bottom: 20px;
         }
 
-        /* Khung Camera Web */
         #cameraContainer {
             width: 100%;
             position: relative;
@@ -84,7 +83,6 @@
             z-index: 10;
         }
 
-        /* Khung Canvas (Ảnh đã chụp) */
         canvas { 
             width: 100%; 
             max-height: 65vh; 
@@ -94,29 +92,45 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        /* KHU VỰC 2: BẢNG CHỈNH SỬA */
+        /* KHU VỰC 2: BẢNG NHẬP GHI CHÚ TỐI GIẢN */
         .editor-workspace { 
-            width: 100%; max-width: 600px; display: none; flex-direction: column; gap: 15px; margin-bottom: 20px;
+            width: 100%; 
+            max-width: 600px; 
+            display: none; 
+            flex-direction: column; 
+            gap: 15px; 
+            margin-bottom: 20px;
         }
-        .tabs { display: flex; background: #2a2a2a; border-radius: 8px; padding: 4px; }
-        .tab-btn { flex: 1; background: transparent; color: var(--text-dim); border: none; padding: 10px 5px; font-size: 13px; font-weight: 600; border-radius: 6px; }
-        .tab-btn.active { background: var(--bg-panel); color: var(--primary); }
-        .tab-content { background: var(--bg-panel); padding: 15px; border-radius: 8px; display: none; }
-        .tab-content.active { display: block; }
-        
-        .control-group { margin-bottom: 15px; }
-        .control-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #ddd; }
-        .val-display { color: var(--primary); font-weight: bold; }
-        input[type="text"] { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; box-sizing: border-box; }
-        input[type="range"] { width: 100%; accent-color: var(--primary); }
-        
-        .download-btn { background-color: #27ae60; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s;}
+        .input-box {
+            background: var(--bg-panel);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .input-box label {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: block;
+        }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 6px; 
+            border: 1px solid #555; 
+            background: #111; 
+            color: white; 
+            box-sizing: border-box; 
+            font-size: 15px;
+        }
+        .download-btn { background-color: #27ae60; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 100%; transition: 0.2s;}
 
-        /* KHU VỰC 3: MENU ĐIỀU KHIỂN (Đẩy xuống đáy) */
+        /* KHU VỰC 3: MENU ĐIỀU KHIỂN NẰM ĐÁY */
         #bottomMenu {
             width: 100%;
             max-width: 600px;
-            margin-top: auto; /* Thuộc tính CSS đưa Menu xuống đáy */
+            margin-top: auto;
             padding-bottom: 20px;
         }
         .header { text-align: center; margin-bottom: 20px; }
@@ -161,63 +175,30 @@
         <canvas id="photoCanvas"></canvas>
     </div>
 
-    <!-- BẢNG CHỈNH SỬA -->
+    <!-- BẢNG CHỈNH SỬA (Đã rút gọn chỉ còn ô Ghi chú) -->
     <div class="editor-workspace" id="editorWorkspace">
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('tab-main')">📝 Ngày Giờ</button>
-            <button class="tab-btn" onclick="switchTab('tab-logo')">®️ Logo</button>
-            <button class="tab-btn" onclick="switchTab('tab-shadow')">🌑 Bóng Đổ</button>
+        
+        <div class="input-box">
+            <label>📝 Nhập Ghi chú (Mã TB, text...):</label>
+            <input type="text" id="customTextInput" placeholder="VD: MC571/A...">
         </div>
 
-        <div id="tab-main" class="tab-content active">
-            <div class="control-group">
-                <div class="control-header"><label>Ghi chú (Mã TB, text...):</label></div>
-                <input type="text" id="customTextInput" placeholder="Nhập văn bản...">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Kích thước cụm</label> <span class="val-display" id="val-sizeMain">11%</span></div>
-                <input type="range" id="sizeMain" min="2" max="25" value="11">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Căn lề Ngang (X)</label> <span class="val-display" id="val-posX">4%</span></div>
-                <input type="range" id="posX" min="0" max="95" value="4">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Căn lề Dọc (Y)</label> <span class="val-display" id="val-posY">75%</span></div>
-                <input type="range" id="posY" min="0" max="95" value="75">
-            </div>
-        </div>
-
-        <div id="tab-logo" class="tab-content">
-            <div class="control-group">
-                <div class="control-header"><label>Kích thước Logo</label> <span class="val-display" id="val-sizeLogo">4%</span></div>
-                <input type="range" id="sizeLogo" min="2" max="25" value="4">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Căn lề Ngang (X)</label> <span class="val-display" id="val-logoX">77%</span></div>
-                <input type="range" id="logoX" min="0" max="95" value="77">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Căn lề Dọc (Y)</label> <span class="val-display" id="val-logoY">92%</span></div>
-                <input type="range" id="logoY" min="0" max="95" value="92">
-            </div>
-        </div>
-
-        <div id="tab-shadow" class="tab-content">
-            <div class="control-group">
-                <div class="control-header"><label>Độ đậm (Opacity)</label> <span class="val-display" id="val-shadowOpacity">70%</span></div>
-                <input type="range" id="shadowOpacity" min="0" max="100" value="70">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Độ nhòe & Tỏa (Blur)</label> <span class="val-display" id="val-shadowSize">4px</span></div>
-                <input type="range" id="shadowSize" min="0" max="20" value="4">
-            </div>
+        <!-- KHU VỰC ẨN: Lưu trữ các thông số chuẩn đã được bạn cấu hình -->
+        <div style="display: none;">
+            <input type="range" id="sizeMain" value="11">
+            <input type="range" id="posX" value="4">
+            <input type="range" id="posY" value="75">
+            <input type="range" id="sizeLogo" value="4">
+            <input type="range" id="logoX" value="77">
+            <input type="range" id="logoY" value="92">
+            <input type="range" id="shadowOpacity" value="70">
+            <input type="range" id="shadowSize" value="4">
         </div>
 
         <button class="download-btn" id="downloadBtn">⬇️ Lưu Ảnh Ngay</button>
     </div>
 
-    <!-- MENU ĐIỀU KHIỂN NẰM DƯỚI ĐÁY -->
+    <!-- MENU ĐIỀU KHIỂN DƯỚI ĐÁY -->
     <div id="bottomMenu">
         <div class="header">
             <h2>Timemark Studio</h2>
@@ -259,7 +240,7 @@
         const galleryInput = document.getElementById('galleryInput');
 
         let currentStream = null;
-        let lastUsedMode = ''; // Biến ghi nhớ tác vụ cuối cùng
+        let lastUsedMode = ''; 
         let img = new Image();
 
         function stopCameraStream() {
@@ -270,14 +251,12 @@
             cameraContainer.style.display = 'none';
         }
 
-        // HÀM RESET GIAO DIỆN SẠCH (ẨN TẤT CẢ TRỪ MENU)
         function resetToFreshState() {
             stopCameraStream();
             canvas.style.display = 'none';
             editorWorkspace.style.display = 'none';
         }
 
-        // 1. MỞ CAM WEB
         startCameraBtn.addEventListener('click', async () => {
             lastUsedMode = 'webcam';
             resetToFreshState();
@@ -286,7 +265,7 @@
                     video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
                 });
                 videoFeed.srcObject = currentStream;
-                bottomMenu.style.display = 'none'; // Giấu cụm menu đi khi đang soi cam
+                bottomMenu.style.display = 'none'; 
                 cameraContainer.style.display = 'block';
             } catch (err) {
                 alert("Không thể mở Camera. Vui lòng cấp quyền máy ảnh!");
@@ -299,7 +278,6 @@
             bottomMenu.style.display = 'block';
         });
 
-        // 2. BẤM CHỤP TRONG CAM WEB
         captureBtn.addEventListener('click', () => {
             canvas.width = videoFeed.videoWidth;
             canvas.height = videoFeed.videoHeight;
@@ -316,17 +294,16 @@
             stopCameraStream();
         });
 
-        // 3. XỬ LÝ ẢNH CAM GỐC & THƯ VIỆN
         function handleFileUpload(e, mode) {
             const file = e.target.files[0];
             if (!file) return;
-            lastUsedMode = mode; // Ghi nhớ lại (nativecam hoặc library)
+            lastUsedMode = mode; 
 
             resetToFreshState();
             const reader = new FileReader();
             reader.onload = function(event) {
                 img.onload = function() {
-                    bottomMenu.style.display = 'none'; // Giấu menu khi bắt đầu chỉnh sửa
+                    bottomMenu.style.display = 'none';
                     canvas.style.display = 'block';
                     editorWorkspace.style.display = 'flex';
                     canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -341,23 +318,9 @@
         nativeCameraInput.addEventListener('change', (e) => handleFileUpload(e, 'nativecam'));
         galleryInput.addEventListener('change', (e) => handleFileUpload(e, 'library'));
 
-        // TAB & DRAW WATERMARK
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        }
-
-        const inputs = ['customTextInput', 'sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
-        inputs.forEach(id => {
-            const inputEl = document.getElementById(id);
-            inputEl.addEventListener('input', (e) => {
-                const displayEl = document.getElementById(`val-${id}`);
-                if(displayEl) displayEl.innerText = id === 'shadowSize' ? `${e.target.value}px` : `${e.target.value}%`;
-                drawWatermark();
-            });
-        });
+        // Chỉ cần lắng nghe ô Ghi chú thay đổi văn bản
+        const customTextInput = document.getElementById('customTextInput');
+        customTextInput.addEventListener('input', drawWatermark);
 
         function drawWatermark() {
             if (!img.src) return;
@@ -406,7 +369,8 @@
             const locY = marginY + baseSize + (baseSize * 0.2);
             ctx.fillText(locationStr, marginX, locY);
 
-            const customText = document.getElementById('customTextInput').value.trim();
+            // Vẽ văn bản ghi chú 
+            const customText = customTextInput.value.trim();
             if (customText !== "") ctx.fillText(customText, marginX, locY + (baseSize * 0.5));
 
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
@@ -427,7 +391,6 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
-        // 4. LƯU ẢNH VÀ AUTO-RESET
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
@@ -452,20 +415,19 @@
                 btn.innerHTML = '✅ Đã lưu vào Thư Viện!';
                 btn.style.backgroundColor = '#2980b9'; 
                 
-                // Sau 1.5 giây, tự động quay lại trạng thái trước đó
                 setTimeout(() => {
                     btn.innerHTML = originalText;
                     btn.style.backgroundColor = ''; 
                     
-                    resetToFreshState(); // Xóa ảnh đang chỉnh
-                    bottomMenu.style.display = 'block'; // Trả lại Menu
+                    resetToFreshState(); 
+                    bottomMenu.style.display = 'block'; 
 
-                    // Nếu dùng Cam Web, tự động mở lại Cam Web để chụp tấm tiếp theo
+                    // Làm trống ô ghi chú cho lần chụp tiếp theo
+                    customTextInput.value = '';
+
                     if (lastUsedMode === 'webcam') {
                         startCameraBtn.click();
                     }
-                    // Nếu là nativecam / library, chỉ cần hiện lại menu là đủ 
-                    // (Mobile Web không cho phép tự gọi cửa sổ chọn file bằng code).
                 }, 1500); 
                 
             }, 'image/jpeg', 0.95); 
