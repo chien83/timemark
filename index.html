@@ -476,14 +476,14 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
-        document.getElementById('downloadBtn').addEventListener('click', function() {
+document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Đang xử lý...';
 
             canvas.toBlob(async function(blob) {
                 if (!blob) {
-                    alert("Có lỗi xảy ra!");
+                    alert("Có lỗi xảy ra khi xử lý ảnh!");
                     btn.innerHTML = originalText;
                     return;
                 }
@@ -491,26 +491,8 @@
                 const fileName = `Timemark_Studio_${new Date().getTime()}.jpg`;
                 const file = new File([blob], fileName, { type: 'image/jpeg' });
 
-                try {
-                    // Ưu tiên chạy Web Share API trên thiết bị di động
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Timemark Image'
-                        });
-                    } else {
-                        // Trực tiếp tải xuống nếu dùng trên PC
-                        const url = window.URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = fileName;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        window.URL.revokeObjectURL(url);
-                    }
-
-                    // --- RESET TRẠNG THÁI ---
+                // HÀM RESET GIAO DIỆN (Được gom lại để gọi dễ dàng)
+                const finishAndReset = () => {
                     btn.innerHTML = '✅ Đã hoàn tất!';
                     btn.style.backgroundColor = '#2980b9'; 
                     
@@ -518,18 +500,51 @@
                         btn.innerHTML = originalText;
                         btn.style.backgroundColor = ''; 
                         
-                        resetToFreshState(); 
-                        bottomMenu.style.display = 'block'; 
+                        resetToFreshState(); // Dọn dẹp khung làm việc
+                        bottomMenu.style.display = 'block'; // Hiện lại menu đáy
                         
-                        // Chỉ xóa ô ghi chú, KHÔNG xóa ô địa chỉ (để dùng cho tấm hình sau)
+                        // Xóa chữ ghi chú, giữ lại địa chỉ
                         document.getElementById('customTextInput').value = '';
 
+                        // TỰ ĐỘNG BẬT LẠI CAMERA NẾU VỪA DÙNG
                         if (lastUsedMode === 'webcam') {
-                            startCameraBtn.click();
+                            startCameraBtn.click(); // Giả lập lệnh click để bật cam web
                         }
                     }, 1500);
+                };
 
+                // KIỂM TRA THIẾT BỊ LÀ IOS HAY ANDROID
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+                try {
+                    // Nếu là iOS (iPhone/iPad) HOẶC trình duyệt đang chạy là Safari -> Bắt buộc dùng Web Share API
+                    if ((isIOS || isSafari) && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Timemark Image'
+                        });
+                        finishAndReset(); // Chạy reset khi Share xong
+                    } 
+                    // Nếu là Android hoặc PC -> Ưu tiên lưu thẳng (Direct Download)
+                    else {
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = fileName;
+                        
+                        // Bắt buộc gắn link vào body (chuẩn HTML5)
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        // Dọn dẹp RAM
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                        
+                        finishAndReset(); // Chạy reset khi Tải xong
+                    }
                 } catch (error) {
+                    // Xử lý khi người dùng ấn Hủy Share
                     btn.innerHTML = originalText;
                 }
                 
