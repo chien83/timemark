@@ -15,6 +15,7 @@
             --text-dim: #aaaaaa;
         }
 
+        /* Thiết lập Flexbox để đẩy menu xuống đáy */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-main);
@@ -24,92 +25,67 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh; /* Chiều cao chiếm toàn bộ màn hình */
+            box-sizing: border-box;
         }
 
-        .header { text-align: center; margin-bottom: 15px; }
-        .header h2 { margin: 0 0 5px 0; font-size: 20px; }
-        .header p { margin: 0; font-size: 13px; color: var(--text-dim); }
-
-        /* Cụm 3 nút linh hoạt */
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
+        /* KHU VỰC 1: VIEW ẢNH (Nằm trên cùng, giãn ra chiếm phần lớn màn hình) */
+        #viewArea {
             width: 100%;
             max-width: 600px;
-            margin-bottom: 20px;
-        }
-        .btn {
-            background-color: var(--bg-panel);
-            color: white;
-            padding: 12px 15px;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            border: 1px solid #333;
-            display: inline-flex;
+            flex: 1; /* Tự động giãn để đẩy Menu xuống dưới */
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            transition: 0.2s;
-            flex: 1 1 30%; /* Tự động chia đều không gian cho 3 nút */
+            margin-bottom: 20px;
         }
-        .btn-primary { background-color: var(--primary); border: none; color: black; }
-        .btn:active { transform: scale(0.95); }
-        input[type="file"] { display: none; }
 
-        /* KHU VỰC CAMERA IN-APP */
+        /* Khung Camera Web */
         #cameraContainer {
             width: 100%;
-            max-width: 600px;
             position: relative;
             display: none;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
         }
         video {
             width: 100%;
-            max-height: 60vh;
+            max-height: 70vh;
             object-fit: cover;
             background: #000;
             display: block;
         }
         .capture-btn-overlay {
             position: absolute;
-            bottom: 20px;
+            bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
+            width: 65px;
+            height: 65px;
             background-color: white;
             border-radius: 50%;
             border: 4px solid var(--primary);
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        .capture-btn-overlay:active { background-color: #ddd; }
-        .close-camera-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 35px; height: 35px;
-            font-size: 16px;
-            cursor: pointer;
+        .capture-btn-overlay:active { background-color: #ddd; transform: translateX(-50%) scale(0.95); }
+
+        /* Khung Canvas (Ảnh đã chụp) */
+        canvas { 
+            width: 100%; 
+            max-height: 65vh; 
+            object-fit: contain; 
+            border-radius: 12px; 
+            display: none; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        /* KHU VỰC CHỈNH SỬA */
-        .canvas-wrapper { width: 100%; max-width: 600px; display: flex; justify-content: center; margin-bottom: 20px; }
-        canvas { width: 100%; max-height: 50vh; object-fit: contain; border-radius: 8px; display: none; }
-        
-        .editor-workspace { width: 100%; max-width: 600px; display: none; flex-direction: column; gap: 15px; }
+        /* KHU VỰC 2: BẢNG CHỈNH SỬA (Nằm giữa, hiện ra khi có ảnh) */
+        .editor-workspace { 
+            width: 100%; max-width: 600px; display: none; flex-direction: column; gap: 15px; margin-bottom: 20px;
+        }
         .tabs { display: flex; background: #2a2a2a; border-radius: 8px; padding: 4px; }
         .tab-btn { flex: 1; background: transparent; color: var(--text-dim); border: none; padding: 10px 5px; font-size: 13px; font-weight: 600; border-radius: 6px; }
         .tab-btn.active { background: var(--bg-panel); color: var(--primary); }
@@ -121,44 +97,62 @@
         .val-display { color: var(--primary); font-weight: bold; }
         input[type="text"] { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; box-sizing: border-box; }
         input[type="range"] { width: 100%; accent-color: var(--primary); }
-        .download-btn { background-color: #27ae60; color: white; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 100%; margin-top: 10px; }
+        
+        .download-btn { background-color: #27ae60; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s;}
+        
+        /* KHU VỰC 3: MENU ĐIỀU KHIỂN (Luôn bị đẩy xuống đáy màn hình) */
+        #bottomMenu {
+            width: 100%;
+            max-width: 600px;
+            margin-top: auto; /* Lệnh "thần thánh" đẩy khối này xuống đáy */
+            padding-bottom: 20px;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h2 { margin: 0 0 5px 0; font-size: 22px; letter-spacing: 0.5px;}
+        .header p { margin: 0; font-size: 13px; color: var(--text-dim); }
+
+        /* Grid sắp xếp 3 nút */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 cột bằng nhau */
+            gap: 12px;
+        }
+        .btn {
+            padding: 14px;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .btn:active { transform: scale(0.95); }
+        input[type="file"] { display: none; }
+        
+        /* Màu sắc các nút giống hình mẫu */
+        .btn-orange { background-color: var(--primary); border: none; color: black; }
+        .btn-dark { background-color: #2a2a2a; border: 1px solid #444; color: white; }
+        
+        /* Nút thư viện kéo dài 2 cột */
+        .btn-full { grid-column: span 2; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h2>Timemark Studio</h2>
-        <p>Giao diện điều khiển chuyên nghiệp</p>
-    </div>
-
-    <!-- CỤM 3 NÚT LỰA CHỌN -->
-    <div class="action-buttons">
-        <button class="btn btn-primary" id="startCameraBtn">📸 Cam Web</button>
-        
-        <label class="btn">
-            📱 Cam Gốc
-            <input type="file" id="nativeCameraInput" accept="image/*" capture="environment">
-        </label>
-        
-        <label class="btn">
-            🖼️ Thư Viện
-            <input type="file" id="galleryInput" accept="image/*">
-        </label>
-    </div>
-
-    <!-- KHU VỰC VIEW CAMERA (Tích hợp ống kính riêng) -->
-    <div id="cameraContainer">
-        <button class="close-camera-btn" id="closeCameraBtn">✖</button>
-        <video id="videoFeed" autoplay playsinline></video>
-        <div class="capture-btn-overlay" id="captureBtn"></div>
-    </div>
-
-    <!-- KHU VỰC HIỂN THỊ ẢNH -->
-    <div class="canvas-wrapper">
+    <!-- KHU VỰC VIEW ẢNH -->
+    <div id="viewArea">
+        <div id="cameraContainer">
+            <video id="videoFeed" autoplay playsinline></video>
+            <div class="capture-btn-overlay" id="captureBtn"></div>
+        </div>
         <canvas id="photoCanvas"></canvas>
     </div>
 
-    <!-- KHU VỰC BẢNG ĐIỀU KHIỂN -->
+    <!-- BẢNG CHỈNH SỬA (Hiện ra sau khi chụp) -->
     <div class="editor-workspace" id="editorWorkspace">
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('tab-main')">📝 Ngày Giờ</button>
@@ -172,8 +166,8 @@
                 <input type="text" id="customTextInput" placeholder="Nhập văn bản...">
             </div>
             <div class="control-group">
-                <div class="control-header"><label>Kích thước cụm</label> <span class="val-display" id="val-sizeMain">11%</span></div>
-                <input type="range" id="sizeMain" min="2" max="25" value="11">
+                <div class="control-header"><label>Kích thước cụm</label> <span class="val-display" id="val-sizeMain">8%</span></div>
+                <input type="range" id="sizeMain" min="2" max="25" value="8">
             </div>
             <div class="control-group">
                 <div class="control-header"><label>Căn lề Ngang (X)</label> <span class="val-display" id="val-posX">4%</span></div>
@@ -187,12 +181,12 @@
 
         <div id="tab-logo" class="tab-content">
             <div class="control-group">
-                <div class="control-header"><label>Kích thước Logo</label> <span class="val-display" id="val-sizeLogo">4%</span></div>
-                <input type="range" id="sizeLogo" min="2" max="25" value="4">
+                <div class="control-header"><label>Kích thước Logo</label> <span class="val-display" id="val-sizeLogo">5%</span></div>
+                <input type="range" id="sizeLogo" min="2" max="25" value="5">
             </div>
             <div class="control-group">
-                <div class="control-header"><label>Căn lề Ngang (X)</label> <span class="val-display" id="val-logoX">77%</span></div>
-                <input type="range" id="logoX" min="0" max="95" value="77">
+                <div class="control-header"><label>Căn lề Ngang (X)</label> <span class="val-display" id="val-logoX">75%</span></div>
+                <input type="range" id="logoX" min="0" max="95" value="75">
             </div>
             <div class="control-group">
                 <div class="control-header"><label>Căn lề Dọc (Y)</label> <span class="val-display" id="val-logoY">92%</span></div>
@@ -214,6 +208,25 @@
         <button class="download-btn" id="downloadBtn">⬇️ Lưu Ảnh Ngay</button>
     </div>
 
+    <!-- MENU ĐIỀU KHIỂN NẰM DƯỚI ĐÁY -->
+    <div id="bottomMenu">
+        <div class="header">
+            <h2>Timemark Studio</h2>
+            <p>Giao diện điều khiển chuyên nghiệp</p>
+        </div>
+        <div class="action-grid">
+            <button class="btn btn-orange" id="startCameraBtn">📸 Cam Web</button>
+            <label class="btn btn-dark">
+                📱 Cam Gốc
+                <input type="file" id="nativeCamInput" accept="image/*" capture="environment">
+            </label>
+            <label class="btn btn-dark btn-full">
+                🖼️ Thư Viện
+                <input type="file" id="libraryInput" accept="image/*">
+            </label>
+        </div>
+    </div>
+
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -223,116 +236,92 @@
     </script>
 
     <script>
+        const bottomMenu = document.getElementById('bottomMenu');
+        const editorWorkspace = document.getElementById('editorWorkspace');
         const canvas = document.getElementById('photoCanvas');
         const ctx = canvas.getContext('2d');
-        const editorWorkspace = document.getElementById('editorWorkspace');
-        
-        // --- LOGIC CAMERA IN-APP ---
-        const videoFeed = document.getElementById('videoFeed');
         const cameraContainer = document.getElementById('cameraContainer');
-        const startCameraBtn = document.getElementById('startCameraBtn');
+        const videoFeed = document.getElementById('videoFeed');
         const captureBtn = document.getElementById('captureBtn');
-        const closeCameraBtn = document.getElementById('closeCameraBtn');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        
+        const nativeCamInput = document.getElementById('nativeCamInput');
+        const libraryInput = document.getElementById('libraryInput');
+
         let currentStream = null;
+        let lastUsedMode = ''; // Biến để ghi nhớ chế độ cuối cùng người dùng sử dụng (webcam, nativecam, library)
+        let img = new Image();
 
-        function stopCameraStream() {
-            if(currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-                currentStream = null;
-            }
-            cameraContainer.style.display = 'none';
-        }
-
+        // 1. MỞ CAM WEB
         startCameraBtn.addEventListener('click', async () => {
-            canvas.style.display = 'none';
-            editorWorkspace.style.display = 'none';
-            
+            lastUsedMode = 'webcam';
+            resetToFreshState();
             try {
                 currentStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
                 });
                 videoFeed.srcObject = currentStream;
-                cameraContainer.style.display = 'block';
+                bottomMenu.style.display = 'none'; // Ẩn Menu
+                cameraContainer.style.display = 'block'; // Bật khung Camera
             } catch (err) {
-                alert("Không thể mở Camera. Vui lòng cấp quyền máy ảnh cho trình duyệt!");
+                alert("Không thể mở Camera. Vui lòng cấp quyền máy ảnh!");
+                bottomMenu.style.display = 'block';
             }
         });
 
-        closeCameraBtn.addEventListener('click', stopCameraStream);
-
-        // Bấm nút chụp ảnh
+        // 2. CHỤP ẢNH TỪ CAM WEB
         captureBtn.addEventListener('click', () => {
-            // Lấy khung hình hiện tại từ Video chuyển sang Canvas
             canvas.width = videoFeed.videoWidth;
             canvas.height = videoFeed.videoHeight;
             ctx.drawImage(videoFeed, 0, 0, canvas.width, canvas.height);
             
-            // Xử lý vẽ Watermark ngay lập tức
             img.onload = function() {
+                cameraContainer.style.display = 'none';
                 canvas.style.display = 'block';
-                editorWorkspace.style.display = 'flex';
-                drawWatermark(); // Bổ sung hàm vẽ ngay sau khi chụp
-                
-                // Tự động cuộn xuống khu vực chỉnh sửa
-                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                editorWorkspace.style.display = 'flex'; // Bật bảng chỉnh sửa
+                drawWatermark();
             };
             img.src = canvas.toDataURL('image/jpeg');
             
-            // Tắt Camera stream để tiết kiệm pin
-            currentStream.getTracks().forEach(track => track.stop());
-            cameraContainer.style.display = 'none';
+            if(currentStream) currentStream.getTracks().forEach(track => track.stop());
         });
 
-        // --- HỆ THỐNG XỬ LÝ ẢNH GỐC / THƯ VIỆN ---
-        let img = new Image();
-
-        // Hàm xử lý chung khi người dùng tải ảnh lên từ Native Camera hoặc Gallery
-        function handleFileUpload(e) {
+        // 3. XỬ LÝ ẢNH TỪ CAM GỐC & THƯ VIỆN
+        function handleFileInput(e, mode) {
             const file = e.target.files[0];
             if (!file) return;
+            lastUsedMode = mode; // Lưu lại trạng thái
+            
+            resetToFreshState();
             const reader = new FileReader();
             reader.onload = function(event) {
                 img.onload = function() {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    
-                    stopCameraStream(); // Tắt cam in-app nếu đang mở dở
-
+                    bottomMenu.style.display = 'none';
                     canvas.style.display = 'block';
                     editorWorkspace.style.display = 'flex';
-                    canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     drawWatermark();
                 }
                 img.src = event.target.result;
             }
             reader.readAsDataURL(file);
-            
-            // Đặt lại giá trị input để có thể chọn lại chính file đó nếu cần
-            e.target.value = '';
+            e.target.value = ''; // Reset input
         }
 
-        document.getElementById('nativeCameraInput').addEventListener('change', handleFileUpload);
-        document.getElementById('galleryInput').addEventListener('change', handleFileUpload);
+        nativeCamInput.addEventListener('change', (e) => handleFileInput(e, 'nativecam'));
+        libraryInput.addEventListener('change', (e) => handleFileInput(e, 'library'));
 
-        // --- HỆ THỐNG TAB VÀ VẼ CHỮ ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
+        // HÀM RESET DỌN DẸP GIAO DIỆN VỀ TRẠNG THÁI SẠCH
+        function resetToFreshState() {
+            if(currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            cameraContainer.style.display = 'none';
+            canvas.style.display = 'none';
+            editorWorkspace.style.display = 'none';
         }
 
-        const inputs = ['customTextInput', 'sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
-
-        inputs.forEach(id => {
-            const inputEl = document.getElementById(id);
-            inputEl.addEventListener('input', (e) => {
-                const displayEl = document.getElementById(`val-${id}`);
-                if(displayEl) displayEl.innerText = id === 'shadowSize' ? `${e.target.value}px` : `${e.target.value}%`;
-                drawWatermark();
-            });
-        });
-
+        // HÀM VẼ WATERMARK
         function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -401,42 +390,66 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
+        // ĐIỀU KHIỂN TAB
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        const inputs = ['customTextInput', 'sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
+        inputs.forEach(id => {
+            const inputEl = document.getElementById(id);
+            inputEl.addEventListener('input', (e) => {
+                const displayEl = document.getElementById(`val-${id}`);
+                if(displayEl) displayEl.innerText = id === 'shadowSize' ? `${e.target.value}px` : `${e.target.value}%`;
+                drawWatermark();
+            });
+        });
+
+        // 4. LƯU ẢNH VÀ TỰ ĐỘNG RESET
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
-            const originalBg = btn.style.backgroundColor;
-
-            // Đổi text thành đang xử lý
             btn.innerHTML = '⏳ Đang lưu...';
 
             canvas.toBlob(function(blob) {
                 if (!blob) {
-                    alert("Có lỗi xảy ra khi xử lý ảnh!");
+                    alert("Có lỗi xảy ra!");
                     btn.innerHTML = originalText;
                     return;
                 }
                 
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
-                
                 link.href = url;
                 link.download = `Timemark_Studio_${new Date().getTime()}.jpg`;
-                
                 document.body.appendChild(link);
                 link.click();
-                
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
                 
-                // --- THÊM HIỆU ỨNG THÔNG BÁO ---
-                btn.innerHTML = '✅ Đã lưu vào Thư Viện!';
-                btn.style.backgroundColor = '#2980b9'; // Đổi nút sang màu xanh lam báo hiệu thành công
+                // Hiển thị trạng thái thành công
+                btn.innerHTML = '✅ Đã lưu thành công!';
+                btn.style.backgroundColor = '#2980b9'; 
                 
-                // Trả lại trạng thái cũ sau 2.5 giây
+                // --- LOGIC AUTO RESET SAU 1.5 GIÂY ---
                 setTimeout(() => {
                     btn.innerHTML = originalText;
-                    btn.style.backgroundColor = ''; // Trả về màu xanh lá gốc của CSS
-                }, 2500);
+                    btn.style.backgroundColor = ''; 
+                    
+                    // Trả giao diện về màn hình chính (hiện lại cụm Menu dưới đáy)
+                    resetToFreshState();
+                    bottomMenu.style.display = 'block';
+
+                    // Tự động gọi lại công cụ vừa sử dụng
+                    if (lastUsedMode === 'webcam') {
+                        startCameraBtn.click(); // Tự mở lại Cam Web
+                    } 
+                    // Lưu ý: Cam Gốc và Thư Viện do rào cản bảo mật của hệ điều hành nên không thể "ép" mở tự động bằng code.
+                    // Nếu dùng 2 chế độ này, app sẽ trả bạn về Menu để tự bấm lại một cách gọn gàng.
+                }, 1500); 
                 
             }, 'image/jpeg', 0.95); 
         });
