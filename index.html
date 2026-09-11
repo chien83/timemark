@@ -372,8 +372,8 @@
                 let targetHeight = img.naturalHeight || img.height;
                 
                 // SỬA LỖI MỜ ẢNH: Khống chế kích thước tối đa là 2000px
-                // Giúp web chạy mượt, ảnh giữ độ sắc nét HD mà không làm điện thoại bị tràn RAM
-                const MAX_SIZE = 2000;
+                // Giúp web chạy mượt, ảnh giữ độ sắc nét HD mà không làm điện thoại bị tràn RAM, ban đầu giá trị 2000
+                const MAX_SIZE = 3000;
                 if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
                     const ratio = Math.min(MAX_SIZE / targetWidth, MAX_SIZE / targetHeight);
                     targetWidth = Math.round(targetWidth * ratio);
@@ -564,7 +564,7 @@ document.getElementById('downloadBtn').addEventListener('click', function() {
                     btn.innerHTML = originalText;
                 }
                 
-            }, 'image/jpeg', 0.95); 
+            }, 'image/jpeg', 1.0); 
         });
     </script>
 </body>
