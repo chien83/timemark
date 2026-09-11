@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timemark Studio Pro - V6.2</title>
+    <title>Timemark Studio Pro - V6.3</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <style>
@@ -92,7 +92,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        /* KHU VỰC 2: BẢNG CHỈNH SỬA */
+        /* KHU VỰC 2: BẢNG NHẬP THÔNG TIN */
         .editor-workspace { 
             width: 100%; 
             max-width: 600px; 
@@ -111,7 +111,7 @@
             font-size: 14px;
             font-weight: bold;
             color: var(--primary);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: block;
         }
         input[type="text"] { 
@@ -125,7 +125,7 @@
             font-size: 15px;
         }
 
-        /* Giao diện thanh trượt nâng cao */
+        /* Cài đặt nâng cao (Ẩn mặc định) */
         .control-group { margin-bottom: 15px; }
         .control-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #ddd; }
         .val-display { color: var(--primary); font-weight: bold; }
@@ -144,10 +144,9 @@
             transition: 0.2s;
         }
         #toggleSettingsBtn:active { background: #333; }
-
         .download-btn { background-color: #27ae60; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 100%; transition: 0.2s;}
 
-        /* KHU VỰC 3: MENU ĐIỀU KHIỂN ĐÁY */
+        /* KHU VỰC 3: MENU ĐÁY */
         #bottomMenu {
             width: 100%;
             max-width: 600px;
@@ -179,18 +178,21 @@
         <canvas id="photoCanvas"></canvas>
     </div>
 
-    <!-- BẢNG CHỈNH SỬA -->
+    <!-- BẢNG CHỈNH SỬA THÔNG TIN -->
     <div class="editor-workspace" id="editorWorkspace">
         
         <div class="input-box">
+            <!-- Ô mới thêm: Nhập địa chỉ -->
+            <label>📍 Địa chỉ hiển thị:</label>
+            <input type="text" id="locationInput" value="Phú Thọ, P. Hòa Bình" style="margin-bottom: 15px;">
+            
             <label>📝 Nhập Ghi chú (Mã TB, text...):</label>
             <input type="text" id="customTextInput" placeholder="VD: MC571/A...">
         </div>
 
-        <!-- Nút bật tắt cài đặt -->
         <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
 
-        <!-- BẢNG THÔNG SỐ NÂNG CAO (Ẩn mặc định) -->
+        <!-- THÔNG SỐ NÂNG CAO (Ẩn mặc định) -->
         <div id="advancedSettings" style="display: none; background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px solid #444;">
             <div class="control-group">
                 <div class="control-header"><label>Kích thước Ngày giờ:</label> <span class="val-display" id="val-sizeMain">11%</span></div>
@@ -217,8 +219,6 @@
                 <div class="control-header"><label>Tọa độ Logo Dọc (Y):</label> <span class="val-display" id="val-logoY">92%</span></div>
                 <input type="range" id="logoY" min="0" max="95" value="92">
             </div>
-            
-            <!-- Bóng đổ giữ cố định ẩn đi cho đỡ rối -->
             <div style="display:none;">
                 <input type="range" id="shadowOpacity" value="70">
                 <input type="range" id="shadowSize" value="4">
@@ -273,7 +273,7 @@
         let lastUsedMode = ''; 
         let img = new Image();
 
-        // ------------------ LOGIC ĐÓNG/MỞ BẢNG NÂNG CAO ------------------
+        // LOGIC ĐÓNG/MỞ BẢNG NÂNG CAO
         const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
         const advancedSettings = document.getElementById('advancedSettings');
         
@@ -286,7 +286,6 @@
                 toggleSettingsBtn.innerHTML = '⚙️ Hiển thị Căn chỉnh Thủ công';
             }
         });
-        // ------------------------------------------------------------------
 
         function stopCameraStream() {
             if(currentStream) {
@@ -300,7 +299,6 @@
             stopCameraStream();
             canvas.style.display = 'none';
             editorWorkspace.style.display = 'none';
-            // Tự động giấu bảng nâng cao đi mỗi khi load ảnh mới
             advancedSettings.style.display = 'none';
             toggleSettingsBtn.innerHTML = '⚙️ Hiển thị Căn chỉnh Thủ công';
         }
@@ -366,13 +364,17 @@
         nativeCameraInput.addEventListener('change', (e) => handleFileUpload(e, 'nativecam'));
         galleryInput.addEventListener('change', (e) => handleFileUpload(e, 'library'));
 
-        // LẮNG NGHE SỰ THAY ĐỔI CỦA Ô GHI CHÚ VÀ CÁC THANH TRƯỢT
-        const inputs = ['customTextInput', 'sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
+        // Lắng nghe thay đổi văn bản cho cả ô Địa chỉ và ô Ghi chú
+        const locationInput = document.getElementById('locationInput');
+        const customTextInput = document.getElementById('customTextInput');
+        locationInput.addEventListener('input', drawWatermark);
+        customTextInput.addEventListener('input', drawWatermark);
+
+        const inputs = ['sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
         inputs.forEach(id => {
             const inputEl = document.getElementById(id);
             if(inputEl) {
                 inputEl.addEventListener('input', (e) => {
-                    // Cập nhật số phần trăm % hiện trên màn hình khi kéo thanh trượt
                     const displayEl = document.getElementById(`val-${id}`);
                     if(displayEl) displayEl.innerText = `${e.target.value}%`;
                     drawWatermark();
@@ -423,13 +425,17 @@
             ctx.fillText(dateStr, dateX, marginY + (baseSize * 0.05));
             ctx.fillText(dayOfWeekStr, dateX, marginY + (baseSize * 0.5));
 
-            const locationStr = "Phú Thọ, P. Hòa Bình";
+            // ĐỌC CHỮ ĐỊA CHỈ TỪ Ô NHẬP LIỆU THAY VÌ FIX CỨNG
+            const locationStr = locationInput.value.trim();
             const locY = marginY + baseSize + (baseSize * 0.2);
-            ctx.fillText(locationStr, marginX, locY);
+            if (locationStr !== "") {
+                ctx.fillText(locationStr, marginX, locY);
+            }
 
-            // Vẽ văn bản ghi chú 
-            const customText = document.getElementById('customTextInput').value.trim();
-            if (customText !== "") ctx.fillText(customText, marginX, locY + (baseSize * 0.5));
+            const customText = customTextInput.value.trim();
+            if (customText !== "") {
+                ctx.fillText(customText, marginX, locY + (baseSize * 0.5));
+            }
 
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
             const lX = canvas.width * (getVal('logoX') / 100);
@@ -449,7 +455,7 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
-            document.getElementById('downloadBtn').addEventListener('click', function() {
+        document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Đang xử lý...';
@@ -465,15 +471,14 @@
                 const file = new File([blob], fileName, { type: 'image/jpeg' });
 
                 try {
-                    // Kiểm tra xem máy có hỗ trợ Share hệ thống không (iOS/Android đều hỗ trợ rất tốt)
+                    // Ưu tiên chạy Web Share API trên thiết bị di động
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        // Gọi bảng menu gốc của iPhone / Android lên
                         await navigator.share({
                             files: [file],
                             title: 'Timemark Image'
                         });
                     } else {
-                        // Trực tiếp tải xuống nếu dùng trên Máy tính (PC)
+                        // Trực tiếp tải xuống nếu dùng trên PC
                         const url = window.URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
@@ -484,7 +489,7 @@
                         window.URL.revokeObjectURL(url);
                     }
 
-                    // --- CHẠY HIỆU ỨNG THÀNH CÔNG VÀ RESET TRẠNG THÁI ---
+                    // --- RESET TRẠNG THÁI ---
                     btn.innerHTML = '✅ Đã hoàn tất!';
                     btn.style.backgroundColor = '#2980b9'; 
                     
@@ -494,16 +499,16 @@
                         
                         resetToFreshState(); 
                         bottomMenu.style.display = 'block'; 
+                        
+                        // Chỉ xóa ô ghi chú, KHÔNG xóa ô địa chỉ (để dùng cho tấm hình sau)
                         document.getElementById('customTextInput').value = '';
 
-                        // Tự động bật lại camera In-app nếu vừa dùng
                         if (lastUsedMode === 'webcam') {
                             startCameraBtn.click();
                         }
                     }, 1500);
 
                 } catch (error) {
-                    // Xử lý khi người dùng ấn chữ "Hủy" hoặc vuốt tắt menu Share trên điện thoại
                     btn.innerHTML = originalText;
                 }
                 
