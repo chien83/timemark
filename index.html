@@ -49,6 +49,27 @@
             gap: 8px;
             margin-bottom: 20px;
         }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 400px;
+            justify-content: center;
+        }
+        .upload-btn {
+            /* Giữ nguyên các thuộc tính cũ, chỉ ghi đè margin-bottom = 0 */
+            margin-bottom: 0 !important; 
+            flex: 1;
+            justify-content: center;
+        }
+        .gallery-btn {
+            background-color: #2c3e50; /* Màu xám đen cho nút thư viện để phân biệt */
+            box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3);
+        }
+
+
         .upload-btn:active { transform: scale(0.95); }
         input[type="file"] { display: none; }
 
@@ -161,6 +182,9 @@
             margin-top: 10px;
         }
         .download-btn:active { transform: scale(0.95); }
+
+
+
     </style>
 </head>
 <body>
@@ -285,8 +309,11 @@
             });
         });
 
-        // Xử lý nạp ảnh
-        imageInput.addEventListener('change', function(e) {
+        const cameraInput = document.getElementById('cameraInput');
+        const galleryInput = document.getElementById('galleryInput');
+
+        // Hàm xử lý chung khi ảnh được chọn (từ cả Camera lẫn Thư viện)
+        function handleImageUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -308,7 +335,15 @@
                 img.src = event.target.result;
             }
             reader.readAsDataURL(file);
-        });
+            
+            // Xóa bộ nhớ input để có thể chọn lại cùng 1 bức ảnh nhiều lần
+            e.target.value = '';
+        }
+
+        // Lắng nghe sự kiện cho cả 2 nút
+        cameraInput.addEventListener('change', handleImageUpload);
+        galleryInput.addEventListener('change', handleImageUpload);
+
 
         // Hàm vẽ ảnh và đóng dấu (Giữ nguyên thuật toán tối ưu từ bản trước)
         function drawWatermark() {
