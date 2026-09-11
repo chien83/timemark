@@ -341,9 +341,23 @@
         });
 
         captureBtn.addEventListener('click', () => {
-            canvas.width = videoFeed.videoWidth;
-            canvas.height = videoFeed.videoHeight;
-            ctx.drawImage(videoFeed, 0, 0, canvas.width, canvas.height);
+            // Thiết lập kích thước giới hạn chung (Đồng bộ với Cam Gốc)
+            const MAX_SIZE = 2500; // Bạn có thể để 2000, 3000 hoặc 3500 tùy ý
+            let targetWidth = videoFeed.videoWidth;
+            let targetHeight = videoFeed.videoHeight;
+            
+            // Tính toán thu nhỏ nếu ảnh Video 4K vượt quá mức giới hạn
+            if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
+                const ratio = Math.min(MAX_SIZE / targetWidth, MAX_SIZE / targetHeight);
+                targetWidth = Math.round(targetWidth * ratio);
+                targetHeight = Math.round(targetHeight * ratio);
+            }
+
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            
+            // Vẽ ảnh đã thu nhỏ lên Canvas
+            ctx.drawImage(videoFeed, 0, 0, targetWidth, targetHeight);
             
             img.onload = function() {
                 cameraContainer.style.display = 'none';
