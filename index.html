@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timemark Studio Pro - V6.1</title>
+    <title>Timemark Studio Pro - V6.2</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <style>
@@ -92,7 +92,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        /* KHU VỰC 2: BẢNG NHẬP GHI CHÚ TỐI GIẢN */
+        /* KHU VỰC 2: BẢNG CHỈNH SỬA */
         .editor-workspace { 
             width: 100%; 
             max-width: 600px; 
@@ -124,9 +124,30 @@
             box-sizing: border-box; 
             font-size: 15px;
         }
+
+        /* Giao diện thanh trượt nâng cao */
+        .control-group { margin-bottom: 15px; }
+        .control-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #ddd; }
+        .val-display { color: var(--primary); font-weight: bold; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+
+        #toggleSettingsBtn {
+            background: transparent; 
+            color: var(--primary); 
+            border: 1px dashed var(--primary); 
+            padding: 12px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            width: 100%;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        #toggleSettingsBtn:active { background: #333; }
+
         .download-btn { background-color: #27ae60; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 100%; transition: 0.2s;}
 
-        /* KHU VỰC 3: MENU ĐIỀU KHIỂN NẰM ĐÁY */
+        /* KHU VỰC 3: MENU ĐIỀU KHIỂN ĐÁY */
         #bottomMenu {
             width: 100%;
             max-width: 600px;
@@ -137,27 +158,10 @@
         .header h2 { margin: 0 0 5px 0; font-size: 22px; letter-spacing: 0.5px;}
         .header p { margin: 0; font-size: 13px; color: var(--text-dim); }
 
-        .action-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .btn {
-            padding: 14px;
-            border-radius: 25px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: 0.2s;
-            text-align: center;
-        }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn { padding: 14px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; text-align: center; }
         .btn:active { transform: scale(0.95); }
         input[type="file"] { display: none; }
-        
         .btn-orange { background-color: var(--primary); border: none; color: black; }
         .btn-dark { background-color: #2a2a2a; border: 1px solid #444; color: white; }
         .btn-full { grid-column: span 2; }
@@ -165,7 +169,7 @@
 </head>
 <body>
 
-    <!-- KHU VỰC VIEW ẢNH -->
+    <!-- VIEW ẢNH -->
     <div id="viewArea">
         <div id="cameraContainer">
             <button class="close-camera-btn" id="closeCameraBtn">✖</button>
@@ -175,7 +179,7 @@
         <canvas id="photoCanvas"></canvas>
     </div>
 
-    <!-- BẢNG CHỈNH SỬA (Đã rút gọn chỉ còn ô Ghi chú) -->
+    <!-- BẢNG CHỈNH SỬA -->
     <div class="editor-workspace" id="editorWorkspace">
         
         <div class="input-box">
@@ -183,22 +187,48 @@
             <input type="text" id="customTextInput" placeholder="VD: MC571/A...">
         </div>
 
-        <!-- KHU VỰC ẨN: Lưu trữ các thông số chuẩn đã được bạn cấu hình -->
-        <div style="display: none;">
-            <input type="range" id="sizeMain" value="11">
-            <input type="range" id="posX" value="4">
-            <input type="range" id="posY" value="75">
-            <input type="range" id="sizeLogo" value="4">
-            <input type="range" id="logoX" value="77">
-            <input type="range" id="logoY" value="92">
-            <input type="range" id="shadowOpacity" value="70">
-            <input type="range" id="shadowSize" value="4">
+        <!-- Nút bật tắt cài đặt -->
+        <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
+
+        <!-- BẢNG THÔNG SỐ NÂNG CAO (Ẩn mặc định) -->
+        <div id="advancedSettings" style="display: none; background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px solid #444;">
+            <div class="control-group">
+                <div class="control-header"><label>Kích thước Ngày giờ:</label> <span class="val-display" id="val-sizeMain">11%</span></div>
+                <input type="range" id="sizeMain" min="2" max="25" value="11">
+            </div>
+            <div class="control-group">
+                <div class="control-header"><label>Căn lề Ngang (X):</label> <span class="val-display" id="val-posX">4%</span></div>
+                <input type="range" id="posX" min="0" max="95" value="4">
+            </div>
+            <div class="control-group">
+                <div class="control-header"><label>Căn lề Dọc (Y):</label> <span class="val-display" id="val-posY">75%</span></div>
+                <input type="range" id="posY" min="0" max="95" value="75">
+            </div>
+            <hr style="border-top: 1px solid #444; border-bottom: none; margin: 15px 0;">
+            <div class="control-group">
+                <div class="control-header"><label>Kích thước Logo:</label> <span class="val-display" id="val-sizeLogo">4%</span></div>
+                <input type="range" id="sizeLogo" min="2" max="25" value="4">
+            </div>
+            <div class="control-group">
+                <div class="control-header"><label>Tọa độ Logo Ngang (X):</label> <span class="val-display" id="val-logoX">77%</span></div>
+                <input type="range" id="logoX" min="0" max="95" value="77">
+            </div>
+            <div class="control-group">
+                <div class="control-header"><label>Tọa độ Logo Dọc (Y):</label> <span class="val-display" id="val-logoY">92%</span></div>
+                <input type="range" id="logoY" min="0" max="95" value="92">
+            </div>
+            
+            <!-- Bóng đổ giữ cố định ẩn đi cho đỡ rối -->
+            <div style="display:none;">
+                <input type="range" id="shadowOpacity" value="70">
+                <input type="range" id="shadowSize" value="4">
+            </div>
         </div>
 
         <button class="download-btn" id="downloadBtn">⬇️ Lưu Ảnh Ngay</button>
     </div>
 
-    <!-- MENU ĐIỀU KHIỂN DƯỚI ĐÁY -->
+    <!-- MENU ĐÁY -->
     <div id="bottomMenu">
         <div class="header">
             <h2>Timemark Studio</h2>
@@ -243,6 +273,21 @@
         let lastUsedMode = ''; 
         let img = new Image();
 
+        // ------------------ LOGIC ĐÓNG/MỞ BẢNG NÂNG CAO ------------------
+        const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
+        const advancedSettings = document.getElementById('advancedSettings');
+        
+        toggleSettingsBtn.addEventListener('click', () => {
+            if(advancedSettings.style.display === 'none') {
+                advancedSettings.style.display = 'block';
+                toggleSettingsBtn.innerHTML = '⚙️ Ẩn Căn chỉnh Thủ công';
+            } else {
+                advancedSettings.style.display = 'none';
+                toggleSettingsBtn.innerHTML = '⚙️ Hiển thị Căn chỉnh Thủ công';
+            }
+        });
+        // ------------------------------------------------------------------
+
         function stopCameraStream() {
             if(currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
@@ -255,6 +300,9 @@
             stopCameraStream();
             canvas.style.display = 'none';
             editorWorkspace.style.display = 'none';
+            // Tự động giấu bảng nâng cao đi mỗi khi load ảnh mới
+            advancedSettings.style.display = 'none';
+            toggleSettingsBtn.innerHTML = '⚙️ Hiển thị Căn chỉnh Thủ công';
         }
 
         startCameraBtn.addEventListener('click', async () => {
@@ -318,9 +366,19 @@
         nativeCameraInput.addEventListener('change', (e) => handleFileUpload(e, 'nativecam'));
         galleryInput.addEventListener('change', (e) => handleFileUpload(e, 'library'));
 
-        // Chỉ cần lắng nghe ô Ghi chú thay đổi văn bản
-        const customTextInput = document.getElementById('customTextInput');
-        customTextInput.addEventListener('input', drawWatermark);
+        // LẮNG NGHE SỰ THAY ĐỔI CỦA Ô GHI CHÚ VÀ CÁC THANH TRƯỢT
+        const inputs = ['customTextInput', 'sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
+        inputs.forEach(id => {
+            const inputEl = document.getElementById(id);
+            if(inputEl) {
+                inputEl.addEventListener('input', (e) => {
+                    // Cập nhật số phần trăm % hiện trên màn hình khi kéo thanh trượt
+                    const displayEl = document.getElementById(`val-${id}`);
+                    if(displayEl) displayEl.innerText = `${e.target.value}%`;
+                    drawWatermark();
+                });
+            }
+        });
 
         function drawWatermark() {
             if (!img.src) return;
@@ -370,7 +428,7 @@
             ctx.fillText(locationStr, marginX, locY);
 
             // Vẽ văn bản ghi chú 
-            const customText = customTextInput.value.trim();
+            const customText = document.getElementById('customTextInput').value.trim();
             if (customText !== "") ctx.fillText(customText, marginX, locY + (baseSize * 0.5));
 
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
@@ -422,8 +480,8 @@
                     resetToFreshState(); 
                     bottomMenu.style.display = 'block'; 
 
-                    // Làm trống ô ghi chú cho lần chụp tiếp theo
-                    customTextInput.value = '';
+                    // Xóa trắng ô ghi chú để chụp hình mới
+                    document.getElementById('customTextInput').value = '';
 
                     if (lastUsedMode === 'webcam') {
                         startCameraBtn.click();
