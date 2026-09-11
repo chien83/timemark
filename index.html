@@ -373,7 +373,7 @@
                 
                 // SỬA LỖI MỜ ẢNH: Khống chế kích thước tối đa là 2000px
                 // Giúp web chạy mượt, ảnh giữ độ sắc nét HD mà không làm điện thoại bị tràn RAM, ban đầu giá trị 2000
-                const MAX_SIZE = 3000;
+                const MAX_SIZE = 2500;
                 if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
                     const ratio = Math.min(MAX_SIZE / targetWidth, MAX_SIZE / targetHeight);
                     targetWidth = Math.round(targetWidth * ratio);
