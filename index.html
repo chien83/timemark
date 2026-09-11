@@ -178,52 +178,60 @@
         <canvas id="photoCanvas"></canvas>
     </div>
 
-    <!-- BẢNG CHỈNH SỬA THÔNG TIN -->
-    <div class="editor-workspace" id="editorWorkspace">
+<div class="editor-workspace" id="editorWorkspace">
         
-        <div class="input-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label style="margin: 0;">📍 Địa chỉ hiển thị:</label>
-                <button id="getLocationBtn" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; transition: 0.2s;">Tự động lấy vị trí</button>
-            </div>
-            <input type="text" id="locationInput" value="Phú Thọ, P. Hòa Bình" style="margin-bottom: 15px;">
-            
-            <label>📝 Nhập Ghi chú (Mã TB, text...):</label>
-            <input type="text" id="customTextInput" placeholder="VD: MC571/A...">
-        </div>
+        <!-- Nút Menu Thu/Phóng (Giải pháp gọn gàng) -->
+        <button id="mainToggleBtn" style="background: var(--bg-panel); color: white; border: 1px solid #444; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 15px; width: 100%; margin-bottom: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s;">
+            <span>✏️ Chỉnh sửa Thông tin & Ghi chú</span>
+            <span id="mainToggleIcon">▼</span>
+        </button>
 
-        <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
+        <!-- TOÀN BỘ KHU VỰC KHOANH ĐỎ ĐƯỢC BỌC VÀO ĐÂY (Mặc định ẩn đi) -->
+        <div id="mainEditPanel" style="display: none; margin-bottom: 15px;">
+            <div class="input-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin: 0;">📍 Địa chỉ hiển thị:</label>
+                    <button id="getLocationBtn" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; transition: 0.2s;">Tự động lấy vị trí</button>
+                </div>
+                <input type="text" id="locationInput" value="Phú Thọ, P. Hòa Bình" style="margin-bottom: 15px;">
+                
+                <label>📝 Nhập Ghi chú (Mã TB, text...):</label>
+                <input type="text" id="customTextInput" placeholder="VD: MC571/A...">
+            </div>
 
-        <!-- THÔNG SỐ NÂNG CAO (Ẩn mặc định) -->
-        <div id="advancedSettings" style="display: none; background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px solid #444;">
-            <div class="control-group">
-                <div class="control-header"><label>Kích thước Ngày giờ:</label> <span class="val-display" id="val-sizeMain">11%</span></div>
-                <input type="range" id="sizeMain" min="2" max="25" value="11">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Căn lề Ngang (X):</label> <span class="val-display" id="val-posX">4%</span></div>
-                <input type="range" id="posX" min="0" max="95" value="4">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Căn lề Dọc (Y):</label> <span class="val-display" id="val-posY">75%</span></div>
-                <input type="range" id="posY" min="0" max="95" value="75">
-            </div>
-            <hr style="border-top: 1px solid #444; border-bottom: none; margin: 15px 0;">
-            <div class="control-group">
-                <div class="control-header"><label>Kích thước Logo:</label> <span class="val-display" id="val-sizeLogo">4%</span></div>
-                <input type="range" id="sizeLogo" min="2" max="25" value="4">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Tọa độ Logo Ngang (X):</label> <span class="val-display" id="val-logoX">77%</span></div>
-                <input type="range" id="logoX" min="0" max="95" value="77">
-            </div>
-            <div class="control-group">
-                <div class="control-header"><label>Tọa độ Logo Dọc (Y):</label> <span class="val-display" id="val-logoY">92%</span></div>
-                <input type="range" id="logoY" min="0" max="95" value="92">
-            </div>
-            <div style="display:none;">
-                <input type="range" id="shadowOpacity" value="70">
-                <input type="range" id="shadowSize" value="4">
+            <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
+
+            <!-- BẢNG THÔNG SỐ NÂNG CAO -->
+            <div id="advancedSettings" style="display: none; background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px solid #444;">
+                <div class="control-group">
+                    <div class="control-header"><label>Kích thước Ngày giờ:</label> <span class="val-display" id="val-sizeMain">11%</span></div>
+                    <input type="range" id="sizeMain" min="2" max="25" value="11">
+                </div>
+                <div class="control-group">
+                    <div class="control-header"><label>Căn lề Ngang (X):</label> <span class="val-display" id="val-posX">4%</span></div>
+                    <input type="range" id="posX" min="0" max="95" value="4">
+                </div>
+                <div class="control-group">
+                    <div class="control-header"><label>Căn lề Dọc (Y):</label> <span class="val-display" id="val-posY">75%</span></div>
+                    <input type="range" id="posY" min="0" max="95" value="75">
+                </div>
+                <hr style="border-top: 1px solid #444; border-bottom: none; margin: 15px 0;">
+                <div class="control-group">
+                    <div class="control-header"><label>Kích thước Logo:</label> <span class="val-display" id="val-sizeLogo">4%</span></div>
+                    <input type="range" id="sizeLogo" min="2" max="25" value="4">
+                </div>
+                <div class="control-group">
+                    <div class="control-header"><label>Tọa độ Logo Ngang (X):</label> <span class="val-display" id="val-logoX">77%</span></div>
+                    <input type="range" id="logoX" min="0" max="95" value="77">
+                </div>
+                <div class="control-group">
+                    <div class="control-header"><label>Tọa độ Logo Dọc (Y):</label> <span class="val-display" id="val-logoY">92%</span></div>
+                    <input type="range" id="logoY" min="0" max="95" value="92">
+                </div>
+                <div style="display:none;">
+                    <input type="range" id="shadowOpacity" value="70">
+                    <input type="range" id="shadowSize" value="4">
+                </div>
             </div>
         </div>
 
@@ -289,6 +297,23 @@
             }
         });
 
+        // LOGIC ĐÓNG/MỞ KHU VỰC NHẬP LIỆU CHÍNH
+        const mainToggleBtn = document.getElementById('mainToggleBtn');
+        const mainEditPanel = document.getElementById('mainEditPanel');
+        const mainToggleIcon = document.getElementById('mainToggleIcon');
+
+        mainToggleBtn.addEventListener('click', () => {
+            if(mainEditPanel.style.display === 'none') {
+                mainEditPanel.style.display = 'block';
+                mainToggleIcon.innerText = '▲';
+                mainToggleBtn.style.backgroundColor = '#333';
+            } else {
+                mainEditPanel.style.display = 'none';
+                mainToggleIcon.innerText = '▼';
+                mainToggleBtn.style.backgroundColor = 'var(--bg-panel)';
+            }
+        });
+
         function stopCameraStream() {
             if(currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
@@ -303,6 +328,9 @@
             editorWorkspace.style.display = 'none';
             advancedSettings.style.display = 'none';
             toggleSettingsBtn.innerHTML = '⚙️ Hiển thị Căn chỉnh Thủ công';
+            // Thêm 2 dòng này để tự động thu gọn menu khi chụp ảnh mới
+            document.getElementById('mainEditPanel').style.display = 'none';
+            document.getElementById('mainToggleIcon').innerText = '▼';
         }
 
         startCameraBtn.addEventListener('click', async () => {
