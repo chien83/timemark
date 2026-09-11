@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f39c12">
-    <title>Timemark Pro - V4 (Pro UI)</title>
+    <title>Timemark Pro - V5 (In-App Camera)</title>
     <style>
         :root {
             --primary: #f39c12;
@@ -33,23 +33,6 @@
         .header h2 { margin: 0 0 5px 0; font-size: 20px; }
         .header p { margin: 0; font-size: 13px; color: var(--text-dim); }
 
-        /* Nút Upload kiểu mới */
-        .upload-btn {
-            background-color: var(--primary);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 25px; /* Bo tròn dạng viên thuốc */
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
         .action-buttons {
             display: flex;
             gap: 15px;
@@ -58,22 +41,91 @@
             max-width: 400px;
             justify-content: center;
         }
+        
         .upload-btn {
-            /* Giữ nguyên các thuộc tính cũ, chỉ ghi đè margin-bottom = 0 */
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px; 
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             margin-bottom: 0 !important; 
             flex: 1;
             justify-content: center;
+            border: none;
         }
         .gallery-btn {
-            background-color: #2c3e50; /* Màu xám đen cho nút thư viện để phân biệt */
+            background-color: #2c3e50; 
             box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3);
         }
-
-
         .upload-btn:active { transform: scale(0.95); }
         input[type="file"] { display: none; }
 
-        /* KHU VỰC HIỂN THỊ ẢNH (Quan trọng nhất) */
+        /* KHU VỰC CAMERA IN-APP */
+        #cameraContainer {
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            display: none; /* Ẩn mặc định */
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+            background: #000;
+        }
+        video {
+            width: 100%;
+            max-height: 65vh;
+            object-fit: cover;
+            display: block;
+        }
+        .capture-btn-overlay {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 65px;
+            height: 65px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            border: 4px solid #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .capture-btn-overlay::after {
+            content: '';
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.1s;
+        }
+        .capture-btn-overlay:active::after { transform: scale(0.85); }
+        
+        #closeCameraBtn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* KHU VỰC HIỂN THỊ ẢNH */
         .canvas-wrapper {
             width: 100%;
             max-width: 600px;
@@ -83,7 +135,6 @@
         }
         canvas {
             width: 100%;
-            /* Giới hạn chiều cao để luôn chứa lọt màn hình, nhường chỗ cho bảng điều khiển */
             max-height: 50vh; 
             object-fit: contain; 
             border-radius: 8px;
@@ -92,16 +143,14 @@
             background: #000;
         }
 
-        /* KHU VỰC BẢNG ĐIỀU KHIỂN (Ẩn ban đầu) */
+        /* KHU VỰC BẢNG ĐIỀU KHIỂN */
         .editor-workspace {
             width: 100%;
             max-width: 600px;
-            display: none; /* Hiện ra khi có ảnh */
+            display: none; 
             flex-direction: column;
             gap: 15px;
         }
-
-        /* Thanh Tabs Navigation */
         .tabs {
             display: flex;
             background: #2a2a2a;
@@ -125,66 +174,28 @@
             color: var(--primary);
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-
-        /* Nội dung từng Tab */
         .tab-content {
             background: var(--bg-panel);
             padding: 15px;
             border-radius: 8px;
-            display: none; /* Ẩn mặc định */
+            display: none; 
         }
-        .tab-content.active {
-            display: block; /* Hiện tab đang chọn */
-        }
-
-        /* Layout các thanh trượt gọn gàng hơn */
-        .control-group {
-            margin-bottom: 15px;
-        }
-        .control-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 13px;
-            color: #ddd;
-        }
-        .val-display {
-            color: var(--primary);
-            font-weight: bold;
-        }
+        .tab-content.active { display: block; }
+        
+        .control-group { margin-bottom: 15px; }
+        .control-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #ddd; }
+        .val-display { color: var(--primary); font-weight: bold; }
         
         input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            background: #111;
-            color: white;
-            box-sizing: border-box;
-            font-size: 14px;
+            width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; box-sizing: border-box; font-size: 14px;
         }
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--primary); /* Đổi màu thanh trượt */
-        }
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
 
         .download-btn {
             background-color: #27ae60;
-            color: white;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.2s;
-            margin-top: 10px;
+            color: white; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; margin-top: 10px;
         }
         .download-btn:active { transform: scale(0.95); }
-
-
-
     </style>
 </head>
 <body>
@@ -194,37 +205,33 @@
         <p>Giao diện điều khiển chuyên nghiệp</p>
     </div>
 
-    <!-- 2 Nút hành động riêng biệt -->
+    <!-- 2 Nút hành động -->
     <div class="action-buttons">
-        <label class="upload-btn">
-            📸 Chụp Ảnh
-            <!-- Có capture="environment" sẽ mở thẳng Camera -->
-            <input type="file" id="cameraInput" accept="image/*" capture="environment">
-        </label>
-        
+        <button class="upload-btn" id="startCameraBtn">📸 Chụp Ảnh</button>
         <label class="upload-btn gallery-btn">
             🖼️ Thư Viện
-            <!-- Không có capture sẽ mở Bộ sưu tập ảnh -->
             <input type="file" id="galleryInput" accept="image/*">
         </label>
     </div>
 
-    <!-- Kéo Canvas lên trên cùng -->
+    <!-- KHU VỰC CAMERA IN-APP -->
+    <div id="cameraContainer">
+        <video id="videoFeed" autoplay playsinline></video>
+        <button id="closeCameraBtn">✖</button>
+        <div class="capture-btn-overlay" id="captureBtn"></div>
+    </div>
+
     <div class="canvas-wrapper">
         <canvas id="photoCanvas"></canvas>
     </div>
 
-    <!-- KHÔNG GIAN LÀM VIỆC (Hiển thị sau khi có ảnh) -->
     <div class="editor-workspace" id="editorWorkspace">
-        
-        <!-- Thanh Tab -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('tab-main')">📝 Ngày Giờ</button>
             <button class="tab-btn" onclick="switchTab('tab-logo')">®️ Logo</button>
             <button class="tab-btn" onclick="switchTab('tab-shadow')">🌑 Bóng Đổ</button>
         </div>
 
-        <!-- Tab 1: Ngày giờ & Ghi chú -->
         <div id="tab-main" class="tab-content active">
             <div class="control-group">
                 <div class="control-header"><label>Ghi chú (Mã TB, text...):</label></div>
@@ -244,7 +251,6 @@
             </div>
         </div>
 
-        <!-- Tab 2: Logo -->
         <div id="tab-logo" class="tab-content">
             <div class="control-group">
                 <div class="control-header"><label>Kích thước Logo</label> <span class="val-display" id="val-sizeLogo">5%</span></div>
@@ -260,7 +266,6 @@
             </div>
         </div>
 
-        <!-- Tab 3: Bóng đổ -->
         <div id="tab-shadow" class="tab-content">
             <div class="control-group">
                 <div class="control-header"><label>Độ đậm (Opacity)</label> <span class="val-display" id="val-shadowOpacity">70%</span></div>
@@ -276,44 +281,71 @@
     </div>
 
     <script>
-        const imageInput = document.getElementById('imageInput');
         const canvas = document.getElementById('photoCanvas');
         const ctx = canvas.getContext('2d');
         const editorWorkspace = document.getElementById('editorWorkspace');
-        
-        // Quản lý Tabs
-        function switchTab(tabId) {
-            // Tắt hết active của nút và nội dung
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            // Bật tab được click
-            event.target.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        }
-
-        // Danh sách ID các thanh trượt để map sự kiện tự động
-        const inputs = ['customTextInput', 'sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
-        
         let img = new Image();
 
-        // Gắn sự kiện thay đổi dữ liệu
-        inputs.forEach(id => {
-            const inputEl = document.getElementById(id);
-            inputEl.addEventListener('input', (e) => {
-                // Cập nhật text hiển thị số (nếu có span display)
-                const displayEl = document.getElementById(`val-${id}`);
-                if(displayEl) {
-                    displayEl.innerText = id === 'shadowSize' ? `${e.target.value}px` : `${e.target.value}%`;
-                }
-                drawWatermark(); // Vẽ lại ảnh
-            });
+        // --- CAMERA LOGIC ---
+        const videoFeed = document.getElementById('videoFeed');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const closeCameraBtn = document.getElementById('closeCameraBtn');
+        let currentStream = null;
+
+        // Hàm tắt Camera
+        function stopCamera() {
+            if(currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            cameraContainer.style.display = 'none';
+        }
+
+        startCameraBtn.addEventListener('click', async () => {
+            canvas.style.display = 'none';
+            editorWorkspace.style.display = 'none';
+            
+            try {
+                // Ưu tiên camera sau, độ phân giải cao
+                currentStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
+                });
+                videoFeed.srcObject = currentStream;
+                cameraContainer.style.display = 'block';
+            } catch (err) {
+                alert("Không thể mở Camera. Vui lòng cấp quyền máy ảnh cho trình duyệt!");
+            }
         });
 
-        const cameraInput = document.getElementById('cameraInput');
-        const galleryInput = document.getElementById('galleryInput');
+        closeCameraBtn.addEventListener('click', stopCamera);
 
-        // Hàm xử lý chung khi ảnh được chọn (từ cả Camera lẫn Thư viện)
-        function handleImageUpload(e) {
+        captureBtn.addEventListener('click', () => {
+            // Chụp khung hình từ Video sang Canvas (ẩn)
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = videoFeed.videoWidth;
+            tempCanvas.height = videoFeed.videoHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(videoFeed, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Xử lý nạp ảnh vào biến img giống như khi tải từ Thư viện
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                canvas.style.display = 'block';
+                editorWorkspace.style.display = 'flex';
+                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                drawWatermark();
+            }
+            img.src = tempCanvas.toDataURL('image/jpeg', 1.0);
+            
+            stopCamera();
+        });
+
+        // --- GALLERY LOGIC ---
+        const galleryInput = document.getElementById('galleryInput');
+        galleryInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -322,30 +354,37 @@
                 img.onload = function() {
                     canvas.width = img.width;
                     canvas.height = img.height;
-                    
-                    // Hiện workspace và canvas
+                    stopCamera(); // Tắt camera nếu đang bật
                     canvas.style.display = 'block';
                     editorWorkspace.style.display = 'flex';
-                    
-                    // Tự động cuộn mượt xuống khu vực ảnh
                     canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    
                     drawWatermark();
                 }
                 img.src = event.target.result;
             }
             reader.readAsDataURL(file);
-            
-            // Xóa bộ nhớ input để có thể chọn lại cùng 1 bức ảnh nhiều lần
-            e.target.value = '';
+            e.target.value = ''; // Reset thẻ input
+        });
+
+        // --- WATERMARK LOGIC ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
         }
 
-        // Lắng nghe sự kiện cho cả 2 nút
-        cameraInput.addEventListener('change', handleImageUpload);
-        galleryInput.addEventListener('change', handleImageUpload);
+        const inputs = ['customTextInput', 'sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
+        
+        inputs.forEach(id => {
+            const inputEl = document.getElementById(id);
+            inputEl.addEventListener('input', (e) => {
+                const displayEl = document.getElementById(`val-${id}`);
+                if(displayEl) displayEl.innerText = id === 'shadowSize' ? `${e.target.value}px` : `${e.target.value}%`;
+                drawWatermark();
+            });
+        });
 
-
-        // Hàm vẽ ảnh và đóng dấu (Giữ nguyên thuật toán tối ưu từ bản trước)
         function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -353,7 +392,6 @@
 
             const getVal = (id) => document.getElementById(id).value;
 
-            // Bóng đổ
             const sSize = parseInt(getVal('shadowSize'));
             const sOpacity = parseInt(getVal('shadowOpacity')) / 100;
             ctx.shadowColor = `rgba(0, 0, 0, ${sOpacity})`;
@@ -363,7 +401,7 @@
 
             const shortEdge = Math.min(canvas.width, canvas.height);
             
-            // --- 1. CỤM NGÀY GIỜ ---
+            // 1. NGÀY GIỜ
             const baseSize = Math.floor(shortEdge * (getVal('sizeMain') / 100)); 
             const marginX = canvas.width * (getVal('posX') / 100);
             const marginY = canvas.height * (getVal('posY') / 100);
@@ -400,7 +438,7 @@
             const customText = document.getElementById('customTextInput').value.trim();
             if (customText !== "") ctx.fillText(customText, marginX, locY + (baseSize * 0.5));
 
-            // --- 2. LOGO ---
+            // 2. LOGO
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
             const lX = canvas.width * (getVal('logoX') / 100);
             const lY = canvas.height * (getVal('logoY') / 100);
@@ -419,32 +457,24 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
-        // Tải ảnh
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const dataURL = canvas.toDataURL('image/jpeg', 0.95);
             const link = document.createElement('a');
-            link.download = `Timemark_Studio_${new Date().getTime()}.jpg`;
+            link.download = `Timemark_${new Date().getTime()}.jpg`;
             link.href = dataURL;
             link.click();
         });
     </script>
 
-<!-- Đăng ký Service Worker cho chế độ Offline -->
+    <!-- Đăng ký Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('Service Worker đã đăng ký thành công với scope: ', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('Đăng ký Service Worker thất bại: ', error);
-                    });
+                    .then(reg => console.log('SW scope: ', reg.scope))
+                    .catch(err => console.log('SW fail: ', err));
             });
         }
     </script>
-</body>
-</html>
-
 </body>
 </html>
