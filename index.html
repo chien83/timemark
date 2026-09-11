@@ -260,16 +260,27 @@
 
         closeCameraBtn.addEventListener('click', stopCameraStream);
 
+        // Bấm nút chụp ảnh
         captureBtn.addEventListener('click', () => {
+            // Lấy khung hình hiện tại từ Video chuyển sang Canvas
             canvas.width = videoFeed.videoWidth;
             canvas.height = videoFeed.videoHeight;
             ctx.drawImage(videoFeed, 0, 0, canvas.width, canvas.height);
             
+            // Xử lý vẽ Watermark ngay lập tức
+            img.onload = function() {
+                canvas.style.display = 'block';
+                editorWorkspace.style.display = 'flex';
+                drawWatermark(); // Bổ sung hàm vẽ ngay sau khi chụp
+                
+                // Tự động cuộn xuống khu vực chỉnh sửa
+                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
             img.src = canvas.toDataURL('image/jpeg');
-            stopCameraStream();
             
-            canvas.style.display = 'block';
-            editorWorkspace.style.display = 'flex';
+            // Tắt Camera stream để tiết kiệm pin
+            currentStream.getTracks().forEach(track => track.stop());
+            cameraContainer.style.display = 'none';
         });
 
         // --- HỆ THỐNG XỬ LÝ ẢNH GỐC / THƯ VIỆN ---
@@ -390,12 +401,31 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
+        // Tải ảnh (Tối ưu hóa chống lỗi trên Mobile)
         document.getElementById('downloadBtn').addEventListener('click', function() {
-            const dataURL = canvas.toDataURL('image/jpeg', 0.95);
-            const link = document.createElement('a');
-            link.download = `Timemark_${new Date().getTime()}.jpg`;
-            link.href = dataURL;
-            link.click();
+            // Thay toDataURL bằng toBlob để đóng gói thành file thực thụ, không gây tràn RAM
+            canvas.toBlob(function(blob) {
+                if (!blob) {
+                    alert("Có lỗi xảy ra khi tạo ảnh!");
+                    return;
+                }
+                
+                // Tạo một đường dẫn ảo siêu nhẹ tới file ảnh
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                
+                link.href = url;
+                link.download = `Timemark_Studio_${new Date().getTime()}.jpg`;
+                
+                // Bắt buộc gắn link ẩn vào body để Mobile cho phép tải
+                document.body.appendChild(link);
+                link.click();
+                
+                // Dọn dẹp rác bộ nhớ ngay lập tức
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+            }, 'image/jpeg', 0.95); // 0.95 là giữ 95% chất lượng ảnh gốc
         });
     </script>
 </body>
