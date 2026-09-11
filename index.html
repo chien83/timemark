@@ -346,18 +346,39 @@
             lastUsedMode = mode; 
 
             resetToFreshState();
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                img.onload = function() {
-                    bottomMenu.style.display = 'none';
-                    canvas.style.display = 'block';
-                    editorWorkspace.style.display = 'flex';
-                    canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    drawWatermark();
+            
+            // SỬA LỖI XOAY NGANG: Dùng URL.createObjectURL để bảo toàn dữ liệu EXIF xoay ảnh
+            const objectUrl = URL.createObjectURL(file);
+            
+            img.onload = function() {
+                // Lấy kích thước thực tế của ảnh sau khi đã xoay chuẩn
+                let targetWidth = img.naturalWidth || img.width;
+                let targetHeight = img.naturalHeight || img.height;
+                
+                // SỬA LỖI MỜ ẢNH: Khống chế kích thước tối đa là 2000px
+                // Giúp web chạy mượt, ảnh giữ độ sắc nét HD mà không làm điện thoại bị tràn RAM
+                const MAX_SIZE = 2000;
+                if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
+                    const ratio = Math.min(MAX_SIZE / targetWidth, MAX_SIZE / targetHeight);
+                    targetWidth = Math.round(targetWidth * ratio);
+                    targetHeight = Math.round(targetHeight * ratio);
                 }
-                img.src = event.target.result;
+
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                
+                bottomMenu.style.display = 'none';
+                canvas.style.display = 'block';
+                editorWorkspace.style.display = 'flex';
+                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                drawWatermark();
+                
+                // Dọn dẹp đường dẫn ảo để giải phóng RAM
+                URL.revokeObjectURL(objectUrl);
             }
-            reader.readAsDataURL(file);
+            
+            img.src = objectUrl;
             e.target.value = ''; 
         }
 
