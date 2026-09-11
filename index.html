@@ -401,31 +401,44 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
-        // Tải ảnh (Tối ưu hóa chống lỗi trên Mobile)
         document.getElementById('downloadBtn').addEventListener('click', function() {
-            // Thay toDataURL bằng toBlob để đóng gói thành file thực thụ, không gây tràn RAM
+            const btn = this;
+            const originalText = btn.innerHTML;
+            const originalBg = btn.style.backgroundColor;
+
+            // Đổi text thành đang xử lý
+            btn.innerHTML = '⏳ Đang lưu...';
+
             canvas.toBlob(function(blob) {
                 if (!blob) {
-                    alert("Có lỗi xảy ra khi tạo ảnh!");
+                    alert("Có lỗi xảy ra khi xử lý ảnh!");
+                    btn.innerHTML = originalText;
                     return;
                 }
                 
-                // Tạo một đường dẫn ảo siêu nhẹ tới file ảnh
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 
                 link.href = url;
                 link.download = `Timemark_Studio_${new Date().getTime()}.jpg`;
                 
-                // Bắt buộc gắn link ẩn vào body để Mobile cho phép tải
                 document.body.appendChild(link);
                 link.click();
                 
-                // Dọn dẹp rác bộ nhớ ngay lập tức
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
                 
-            }, 'image/jpeg', 0.95); // 0.95 là giữ 95% chất lượng ảnh gốc
+                // --- THÊM HIỆU ỨNG THÔNG BÁO ---
+                btn.innerHTML = '✅ Đã lưu vào Thư Viện!';
+                btn.style.backgroundColor = '#2980b9'; // Đổi nút sang màu xanh lam báo hiệu thành công
+                
+                // Trả lại trạng thái cũ sau 2.5 giây
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.backgroundColor = ''; // Trả về màu xanh lá gốc của CSS
+                }, 2500);
+                
+            }, 'image/jpeg', 0.95); 
         });
     </script>
 </body>
