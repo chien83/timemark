@@ -170,12 +170,20 @@
         <p>Giao diện điều khiển chuyên nghiệp</p>
     </div>
 
-    <!-- Nút chụp ảnh -->
-    <label class="upload-btn">
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z"/></svg>
-        Mở Camera / Ảnh
-        <input type="file" id="imageInput" accept="image/*" capture="environment">
-    </label>
+    <!-- 2 Nút hành động riêng biệt -->
+    <div class="action-buttons">
+        <label class="upload-btn">
+            📸 Chụp Ảnh
+            <!-- Có capture="environment" sẽ mở thẳng Camera -->
+            <input type="file" id="cameraInput" accept="image/*" capture="environment">
+        </label>
+        
+        <label class="upload-btn gallery-btn">
+            🖼️ Thư Viện
+            <!-- Không có capture sẽ mở Bộ sưu tập ảnh -->
+            <input type="file" id="galleryInput" accept="image/*">
+        </label>
+    </div>
 
     <!-- Kéo Canvas lên trên cùng -->
     <div class="canvas-wrapper">
