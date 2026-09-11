@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timemark Studio Pro - V6.2</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <style>
+        :root {
+            --primary: #f39c12;
+            --bg-main: #121212;
+            --bg-panel: #1e1e1e;
+            --text-light: #ffffff;
+            --text-dim: #aaaaaa;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-light);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* KHU VỰC 1: VIEW ẢNH */
+        #viewArea {
+            width: 100%;
+            max-width: 600px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #cameraContainer {
+            width: 100%;
+            position: relative;
+            display: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        video {
+            width: 100%;
+            max-height: 70vh;
+            object-fit: cover;
+            background: #000;
+            display: block;
+        }
+        .capture-btn-overlay {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 65px;
+            height: 65px;
+            background-color: white;
+            border-radius: 50%;
+            border: 4px solid var(--primary);
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .capture-btn-overlay:active { background-color: #ddd; transform: translateX(-50%) scale(0.95); }
+        .close-camera-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px; height: 35px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        canvas { 
+            width: 100%; 
+            max-height: 65vh; 
+            object-fit: contain; 
+            border-radius: 12px; 
+            display: none; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* KHU VỰC 2: BẢNG CHỈNH SỬA */
+        .editor-workspace { 
+            width: 100%; 
+            max-width: 600px; 
+            display: none; 
+            flex-direction: column; 
+            gap: 15px; 
+            margin-bottom: 20px;
+        }
+        .input-box {
+            background: var(--bg-panel);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .input-box label {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: block;
+        }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 6px; 
+            border: 1px solid #555; 
+            background: #111; 
+            color: white; 
+            box-sizing: border-box; 
+            font-size: 15px;
+        }
+
+        /* Giao diện thanh trượt nâng cao */
+        .control-group { margin-bottom: 15px; }
+        .control-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #ddd; }
+        .val-display { color: var(--primary); font-weight: bold; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+
+        #toggleSettingsBtn {
+            background: transparent; 
+            color: var(--primary); 
+            border: 1px dashed var(--primary); 
+            padding: 12px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            width: 100%;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        #toggleSettingsBtn:active { background: #333; }
+
+        .download-btn { background-color: #27ae60; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 100%; transition: 0.2s;}
+
+        /* KHU VỰC 3: MENU ĐIỀU KHIỂN ĐÁY */
+        #bottomMenu {
+            width: 100%;
+            max-width: 600px;
+            margin-top: auto;
+            padding-bottom: 20px;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h2 { margin: 0 0 5px 0; font-size: 22px; letter-spacing: 0.5px;}
+        .header p { margin: 0; font-size: 13px; color: var(--text-dim); }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn { padding: 14px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; text-align: center; }
+        .btn:active { transform: scale(0.95); }
+        input[type="file"] { display: none; }
+        .btn-orange { background-color: var(--primary); border: none; color: black; }
+        .btn-dark { background-color: #2a2a2a; border: 1px solid #444; color: white; }
+        .btn-full { grid-column: span 2; }
+    </style>
+</head>
+<body>
+
+    <!-- VIEW ẢNH -->
+    <div id="viewArea">
+        <div id="cameraContainer">
+            <button class="close-camera-btn" id="closeCameraBtn">✖</button>
+            <video id="videoFeed" autoplay playsinline></video>
+            <div class="capture-btn-overlay" id="captureBtn"></div>
+        </div>
+        <canvas id="photoCanvas"></canvas>
+    </div>
+
+    <!-- BẢNG CHỈNH SỬA -->
+    <div class="editor-workspace" id="editorWorkspace">
+        
+        <div class="input-box">
+            <label>📝 Nhập Ghi chú (Mã TB, text...):</label>
+            <input type="text" id="customTextInput" placeholder="VD: MC571/A...">
+        </div>
+
+        <!-- Nút bật tắt cài đặt -->
+        <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
+
+        <!-- BẢNG THÔNG SỐ NÂNG CAO (Ẩn mặc định) -->
+        <div id="advancedSettings" style="display: none; background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px solid #444;">
+            <div class="control-group">
+                <div class="control-header"><label>Kích thước Ngày giờ:</label> <span class="val-display" id="val-sizeMain">11%</span></div>
+                <input type="range" id="sizeMain" min="2" max="25" value="11">
+            </div>
+            <div class="control-group">
+                <div class="control-header"><label>Căn lề Ngang (X):</label> <span class="val-display" id="val-posX">4%</span></div>
+                <input type="range" id="posX" min="0" max="95" value="4">
+            </div>
+            <div class="control-group">
+                <div class="control-header"><label>Căn lề Dọc (Y):</label> <span class="val-display" id="val-posY">75%</span></div>
+                <input type="range" id="posY" min="0" max="95" value="75">
+            </div>
+            <hr style="border-top: 1px solid #444; border-bottom: none; margin: 15px 0;">
+            <div class="control-group">
+                <div class="control-header"><label>Kích thước Logo:</label> <span class="val-display" id="val-sizeLogo">4%</span></div>
+                <input type="range" id="sizeLogo" min="2" max="25" value="4">
+            </div>
+            <div class="control-group">
+                <div class="control-header"><label>Tọa độ Logo Ngang (X):</label> <span class="val-display" id="val-logoX">77%</span></div>
+                <input type="range" id="logoX" min="0" max="95" value="77">
+            </div>
+            <div class="control-group">
+                <div class="control-header"><label>Tọa độ Logo Dọc (Y):</label> <span class="val-display" id="val-logoY">92%</span></div>
+                <input type="range" id="logoY" min="0" max="95" value="92">
+            </div>
+            
+            <!-- Bóng đổ giữ cố định ẩn đi cho đỡ rối -->
+            <div style="display:none;">
+                <input type="range" id="shadowOpacity" value="70">
+                <input type="range" id="shadowSize" value="4">
+            </div>
+        </div>
+
+        <button class="download-btn" id="downloadBtn">⬇️ Lưu Ảnh Ngay</button>
+    </div>
+
+    <!-- MENU ĐÁY -->
+    <div id="bottomMenu">
+        <div class="header">
+            <h2>Timemark Studio</h2>
+            <p>Giao diện điều khiển chuyên nghiệp</p>
+        </div>
+        <div class="action-grid">
+            <button class="btn btn-orange" id="startCameraBtn">📸 Cam Web</button>
+            <label class="btn btn-dark">
+                📱 Cam Gốc
+                <input type="file" id="nativeCameraInput" accept="image/*" capture="environment">
+            </label>
+            <label class="btn btn-dark btn-full">
+                🖼️ Thư Viện
+                <input type="file" id="galleryInput" accept="image/*">
+            </label>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW fail: ', err));
+            });
+        }
+    </script>
+
+    <script>
+        const bottomMenu = document.getElementById('bottomMenu');
+        const editorWorkspace = document.getElementById('editorWorkspace');
+        const canvas = document.getElementById('photoCanvas');
+        const ctx = canvas.getContext('2d');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const videoFeed = document.getElementById('videoFeed');
+        const captureBtn = document.getElementById('captureBtn');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const closeCameraBtn = document.getElementById('closeCameraBtn');
+        
+        const nativeCameraInput = document.getElementById('nativeCameraInput');
+        const galleryInput = document.getElementById('galleryInput');
+
+        let currentStream = null;
+        let lastUsedMode = ''; 
+        let img = new Image();
+
+        // ------------------ LOGIC ĐÓNG/MỞ BẢNG NÂNG CAO ------------------
+        const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
+        const advancedSettings = document.getElementById('advancedSettings');
+        
+        toggleSettingsBtn.addEventListener('click', () => {
+            if(advancedSettings.style.display === 'none') {
+                advancedSettings.style.display = 'block';
+                toggleSettingsBtn.innerHTML = '⚙️ Ẩn Căn chỉnh Thủ công';
+            } else {
+                advancedSettings.style.display = 'none';
+                toggleSettingsBtn.innerHTML = '⚙️ Hiển thị Căn chỉnh Thủ công';
+            }
+        });
+        // ------------------------------------------------------------------
+
+        function stopCameraStream() {
+            if(currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            cameraContainer.style.display = 'none';
+        }
+
+        function resetToFreshState() {
+            stopCameraStream();
+            canvas.style.display = 'none';
+            editorWorkspace.style.display = 'none';
+            // Tự động giấu bảng nâng cao đi mỗi khi load ảnh mới
+            advancedSettings.style.display = 'none';
+            toggleSettingsBtn.innerHTML = '⚙️ Hiển thị Căn chỉnh Thủ công';
+        }
+
+        startCameraBtn.addEventListener('click', async () => {
+            lastUsedMode = 'webcam';
+            resetToFreshState();
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
+                });
+                videoFeed.srcObject = currentStream;
+                bottomMenu.style.display = 'none'; 
+                cameraContainer.style.display = 'block';
+            } catch (err) {
+                alert("Không thể mở Camera. Vui lòng cấp quyền máy ảnh!");
+                bottomMenu.style.display = 'block';
+            }
+        });
+
+        closeCameraBtn.addEventListener('click', () => {
+            resetToFreshState();
+            bottomMenu.style.display = 'block';
+        });
+
+        captureBtn.addEventListener('click', () => {
+            canvas.width = videoFeed.videoWidth;
+            canvas.height = videoFeed.videoHeight;
+            ctx.drawImage(videoFeed, 0, 0, canvas.width, canvas.height);
+            
+            img.onload = function() {
+                cameraContainer.style.display = 'none';
+                canvas.style.display = 'block';
+                editorWorkspace.style.display = 'flex';
+                drawWatermark();
+                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+            img.src = canvas.toDataURL('image/jpeg');
+            stopCameraStream();
+        });
+
+        function handleFileUpload(e, mode) {
+            const file = e.target.files[0];
+            if (!file) return;
+            lastUsedMode = mode; 
+
+            resetToFreshState();
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                img.onload = function() {
+                    bottomMenu.style.display = 'none';
+                    canvas.style.display = 'block';
+                    editorWorkspace.style.display = 'flex';
+                    canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    drawWatermark();
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+            e.target.value = ''; 
+        }
+
+        nativeCameraInput.addEventListener('change', (e) => handleFileUpload(e, 'nativecam'));
+        galleryInput.addEventListener('change', (e) => handleFileUpload(e, 'library'));
+
+        // LẮNG NGHE SỰ THAY ĐỔI CỦA Ô GHI CHÚ VÀ CÁC THANH TRƯỢT
+        const inputs = ['customTextInput', 'sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
+        inputs.forEach(id => {
+            const inputEl = document.getElementById(id);
+            if(inputEl) {
+                inputEl.addEventListener('input', (e) => {
+                    // Cập nhật số phần trăm % hiện trên màn hình khi kéo thanh trượt
+                    const displayEl = document.getElementById(`val-${id}`);
+                    if(displayEl) displayEl.innerText = `${e.target.value}%`;
+                    drawWatermark();
+                });
+            }
+        });
+
+        function drawWatermark() {
+            if (!img.src) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            const getVal = (id) => document.getElementById(id).value;
+            const sSize = parseInt(getVal('shadowSize'));
+            const sOpacity = parseInt(getVal('shadowOpacity')) / 100;
+            ctx.shadowColor = `rgba(0, 0, 0, ${sOpacity})`;
+            ctx.shadowBlur = sSize;
+            ctx.shadowOffsetX = sSize / 1.5;
+            ctx.shadowOffsetY = sSize / 1.5;
+
+            const shortEdge = Math.min(canvas.width, canvas.height);
+            const baseSize = Math.floor(shortEdge * (getVal('sizeMain') / 100)); 
+            const marginX = canvas.width * (getVal('posX') / 100);
+            const marginY = canvas.height * (getVal('posY') / 100);
+
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const dateStr = `${now.getDate()} Tháng ${now.getMonth() + 1}, ${now.getFullYear()}`;
+            const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+            const dayOfWeekStr = daysOfWeek[now.getDay()];
+
+            ctx.font = `bold ${baseSize}px sans-serif`;
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = 'white';
+            ctx.fillText(timeStr, marginX, marginY);
+            
+            const timeWidth = ctx.measureText(timeStr).width;
+            ctx.shadowColor = 'transparent';
+            const barX = marginX + timeWidth + (baseSize * 0.2);
+            ctx.fillStyle = '#f39c12';
+            ctx.fillRect(barX, marginY + (baseSize * 0.1), Math.max(3, baseSize * 0.04), baseSize * 0.8);
+            
+            ctx.shadowColor = `rgba(0, 0, 0, ${sOpacity})`;
+            const dateSize = Math.floor(baseSize * 0.35);
+            ctx.font = `${dateSize}px sans-serif`;
+            ctx.fillStyle = 'white';
+            const dateX = barX + (baseSize * 0.2);
+            ctx.fillText(dateStr, dateX, marginY + (baseSize * 0.05));
+            ctx.fillText(dayOfWeekStr, dateX, marginY + (baseSize * 0.5));
+
+            const locationStr = "Phú Thọ, P. Hòa Bình";
+            const locY = marginY + baseSize + (baseSize * 0.2);
+            ctx.fillText(locationStr, marginX, locY);
+
+            // Vẽ văn bản ghi chú 
+            const customText = document.getElementById('customTextInput').value.trim();
+            if (customText !== "") ctx.fillText(customText, marginX, locY + (baseSize * 0.5));
+
+            const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
+            const lX = canvas.width * (getVal('logoX') / 100);
+            const lY = canvas.height * (getVal('logoY') / 100);
+
+            ctx.font = `bold ${logoBaseSize}px sans-serif`;
+            ctx.fillStyle = '#FFC107'; 
+            ctx.fillText("Time", lX, lY);
+            
+            const timeLogoWidth = ctx.measureText("Time").width;
+            ctx.fillStyle = 'white';
+            ctx.fillText("mark", lX + timeLogoWidth, lY);
+
+            const subTextSize = Math.floor(logoBaseSize * 0.65);
+            ctx.font = `normal ${subTextSize}px sans-serif`;
+            ctx.fillStyle = '#E0E0E0';
+            ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
+        }
+
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Đang xử lý...';
+
+            canvas.toBlob(async function(blob) {
+                if (!blob) {
+                    alert("Có lỗi xảy ra!");
+                    btn.innerHTML = originalText;
+                    return;
+                }
+                
+                const fileName = `Timemark_Studio_${new Date().getTime()}.jpg`;
+                const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+                try {
+                    // Kiểm tra xem máy có hỗ trợ Share hệ thống không (iOS/Android đều hỗ trợ rất tốt)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        // Gọi bảng menu gốc của iPhone / Android lên
+                        await navigator.share({
+                            files: [file],
+                            title: 'Timemark Image'
+                        });
+                    } else {
+                        // Trực tiếp tải xuống nếu dùng trên Máy tính (PC)
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    }
+
+                    // --- CHẠY HIỆU ỨNG THÀNH CÔNG VÀ RESET TRẠNG THÁI ---
+                    btn.innerHTML = '✅ Đã hoàn tất!';
+                    btn.style.backgroundColor = '#2980b9'; 
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.backgroundColor = ''; 
+                        
+                        resetToFreshState(); 
+                        bottomMenu.style.display = 'block'; 
+                        document.getElementById('customTextInput').value = '';
+
+                        // Tự động bật lại camera In-app nếu vừa dùng
+                        if (lastUsedMode === 'webcam') {
+                            startCameraBtn.click();
+                        }
+                    }, 1500);
+
+                } catch (error) {
+                    // Xử lý khi người dùng ấn chữ "Hủy" hoặc vuốt tắt menu Share trên điện thoại
+                    btn.innerHTML = originalText;
+                }
+                
+            }, 'image/jpeg', 0.95); 
+        });
+    </script>
+</body>
+</html>
