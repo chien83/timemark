@@ -264,7 +264,8 @@
     <!-- MENU ĐÁY -->
     <div id="bottomMenu">
         <div class="header">
-            <h2>Timemark Studio</h2>
+            <!-- Thêm ID 'secretTrigger' vào thẻ h2 để làm điểm chạm -->
+            <h2 id="secretTrigger" style="user-select: none;">Timemark Studio</h2>
             <p>Giao diện điều khiển chuyên nghiệp</p>
         </div>
         <div class="action-grid">
@@ -273,7 +274,9 @@
                 📱 Cam Gốc
                 <input type="file" id="nativeCameraInput" accept="image/*" capture="environment">
             </label>
-            <label class="btn btn-dark btn-full">
+            
+            <!-- Đã thêm id 'galleryBtnWrapper' và style='display:none;' để ẩn đi -->
+            <label class="btn btn-dark btn-full" id="galleryBtnWrapper" style="display: none;">
                 🖼️ Thư Viện
                 <input type="file" id="galleryInput" accept="image/*">
             </label>
