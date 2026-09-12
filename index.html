@@ -739,6 +739,33 @@
             }
         });
 
+        // ========================================================
+        // TÍNH NĂNG ANTI-FRAUD: ĐỒNG BỘ GIỜ QUỐC TẾ (CHỐNG CHỈNH GIỜ)
+        // ========================================================
+        window.secureTime = { serverTimestamp: null, performanceMark: null, isVerified: false };
+
+        async function syncNetworkTime() {
+            try {
+                // Lấy giờ Việt Nam từ máy chủ Quốc tế
+                const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+                const data = await response.json();
+                
+                // Lưu lại mốc giờ chuẩn và mốc thời gian phần cứng máy
+                window.secureTime.serverTimestamp = new Date(data.datetime).getTime();
+                window.secureTime.performanceMark = performance.now();
+                window.secureTime.isVerified = true;
+                console.log("🔒 Đã chốt giờ chuẩn Quốc tế!");
+            } catch (error) {
+                console.warn("Mạng yếu, tạm dùng giờ điện thoại.");
+            }
+        }
+
+        // Tự động đồng bộ giờ ngay khi mở App và khi bật Camera
+        window.addEventListener('load', syncNetworkTime);
+        document.getElementById('startCameraBtn').addEventListener('click', syncNetworkTime);
+        document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
+        // ========================================================       
+        
         function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
