@@ -166,8 +166,7 @@
         .btn-full { grid-column: span 2; }
     </style>
     <!-- Thư viện tạo mã QR Code siêu nhẹ -->
-    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script> -->
-    <script src="./qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 </head>
 <body>
 
@@ -740,56 +739,7 @@
             }
         });
 
-        // ========================================================
-        // TÍNH NĂNG ANTI-FRAUD: ĐỒNG BỘ GIỜ QUỐC TẾ (BẢN VĨNH CỬU)
-        // ========================================================
-        window.secureTime = { serverTimestamp: null, performanceMark: null, isVerified: false };
-
-        async function syncNetworkTime() {
-            try {
-                let serverTimeStr;
-                try {
-                    // Ưu tiên 1: Máy chủ TimeAPI siêu tốc
-                    const res1 = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');
-                    if (!res1.ok) throw new Error();
-                    const data1 = await res1.json();
-                    serverTimeStr = data1.dateTime;
-                } catch (e) {
-                    // Dự phòng 2: Máy chủ WorldTime
-                    const res2 = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
-                    const data2 = await res2.json();
-                    serverTimeStr = data2.datetime;
-                }
-                
-                // Lưu lại mốc giờ chuẩn và thời gian phần cứng
-                window.secureTime.serverTimestamp = new Date(serverTimeStr).getTime();
-                window.secureTime.performanceMark = performance.now();
-                window.secureTime.isVerified = true;
-                
-                // HIỆU ỨNG: Đổi màu nút Camera sang Xanh lá để báo hiệu đã KHÓA GIỜ THÀNH CÔNG
-                document.getElementById('startCameraBtn').innerHTML = '📸 Cam Web <span style="color:#2ecc71">✔</span>';
-                document.getElementById('startCameraBtn').style.borderColor = '#2ecc71';
-                
-            } catch (error) {
-                // Nếu sập cả 2 máy chủ (Mất mạng)
-                window.secureTime.isVerified = false;
-                document.getElementById('startCameraBtn').innerHTML = '📸 Cam Web ⚠️';
-            }
-        }
-
-        // 1. Đồng bộ khi mở App
-        window.addEventListener('load', syncNetworkTime);
-        
-        // 2. Chặn gian lận: Cứ mỗi khi nhân viên ẩn App đi (để vào Cài đặt) rồi quay lại, App sẽ tự đồng bộ lại!
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') syncNetworkTime();
-        });
-        
-        document.getElementById('startCameraBtn').addEventListener('click', syncNetworkTime);
-        document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
-        // ========================================================
-
-            function drawWatermark() {
+        function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -807,23 +757,7 @@
             const marginX = canvas.width * (getVal('posX') / 100);
             const marginY = canvas.height * (getVal('posY') / 100);
 
-            // ==========================================
-            // BƯỚC 2A: PHÂN LOẠI GIỜ CHUẨN & GIỜ MÁY
-            // ==========================================
-            let now;
-            let timeStatus = ""; // Biến chứa Dấu tích xanh hoặc Cảnh báo
-            
-            if (window.secureTime && window.secureTime.isVerified) {
-                // Dùng đồng hồ phần cứng (performance). Nhân viên lùi giờ điện thoại vô tác dụng!
-                const elapsed = performance.now() - window.secureTime.performanceMark;
-                now = new Date(window.secureTime.serverTimestamp + elapsed);
-                timeStatus = " [✔ Chuẩn QT]"; 
-            } else {
-                // Mất mạng, bắt buộc dùng giờ điện thoại
-                now = new Date(); 
-                timeStatus = " [⚠️ Giờ Máy]"; 
-            }
-
+            const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const dateStr = `${now.getDate()} Tháng ${now.getMonth() + 1}, ${now.getFullYear()}`;
             const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -881,7 +815,7 @@
             if (customText !== "") {
                 const noteSize = Math.floor(baseSize * 0.45);
                 ctx.font = `bold ${noteSize}px sans-serif`;
-                const fullText = `${customText}`; 
+                const fullText = `${customText}`; // (Đã bỏ icon tờ giấy theo ý bạn)
                 
                 // Bước 1: Đo chiều dài của dòng chữ để làm hộp vừa vặn
                 const textWidth = ctx.measureText(fullText).width;
@@ -916,49 +850,48 @@
             }
 
             // ========================================================
-            // 6. IN MÃ QR (FIX LỖI PWA IOS: LUÔN VẼ KỂ CẢ KHI MẤT GPS)
+            // 6. IN MÃ QR (BẰNG CHỨNG GỐC + LINK MAPS BẤM TRỰC TIẾP)
             // ========================================================
-            // Xử lý link Map: Nếu có GPS thì tạo link, không có thì báo chuỗi mặc định
-            let mapsUrl = "Chưa cấp quyền GPS hoặc mất tín hiệu";
             if (window.exactGPS && window.exactGPS !== "") {
+                const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
+                const deviceName = customTextInput.value.trim() || "Chưa nhập";
+                
+                // Xóa dấu cách trong tọa độ để link không bị đứt đoạn khi gửi qua Zalo
                 const gpsForLink = window.exactGPS.replace(/\s/g, '');
-                mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
+                const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
+                
+                // Gom thông tin, thay dòng "Tọa độ" thành đường link Maps trực tiếp
+                const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}\n- Vị trí: ${mapsUrl}`;
+                
+                // Ép chuẩn mã hóa UTF-8
+                const utf8Payload = unescape(encodeURIComponent(securityPayload));
+
+                const qr = new QRious({
+                    value: utf8Payload, 
+                    size: 300, 
+                    background: 'white',
+                    foreground: 'black',
+                    level: 'M'
+                });
+
+                const qrSize = baseSize * 1.5; 
+                const getVal = (id) => document.getElementById(id).value;
+                const qrX = canvas.width * (getVal('logoX') / 100);
+                const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
+
+                ctx.shadowColor = 'transparent';
+                ctx.fillStyle = 'white';
+                ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
+                ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
+                
+                const hintSize = Math.floor(baseSize * 0.28);
+                ctx.font = `bold ${hintSize}px sans-serif`;
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center'; 
+                ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
+                ctx.textAlign = 'left'; 
             }
 
-            const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
-            const deviceName = customTextInput.value.trim() || "Chưa nhập";
-            
-            // Gom thông tin, thay dòng "Tọa độ" thành đường link Maps trực tiếp (hoặc báo lỗi nếu mất GPS)
-            const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}${timeStatus}\n- Vị trí: ${mapsUrl}`;
-            
-            // Ép chuẩn mã hóa UTF-8
-            const utf8Payload = unescape(encodeURIComponent(securityPayload));
-
-            // KHỐI VẼ QR BÂY GIỜ ĐÃ ĐƯỢC GIẢI PHÓNG KHỎI ĐIỀU KIỆN GPS
-            const qr = new QRious({
-                value: utf8Payload, 
-                size: 300, 
-                background: 'white',
-                foreground: 'black',
-                level: 'M'
-            });
-
-            const qrSize = baseSize * 1.5; 
-            const getVal = (id) => document.getElementById(id).value;
-            const qrX = canvas.width * (getVal('logoX') / 100);
-            const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
-
-            ctx.shadowColor = 'transparent';
-            ctx.fillStyle = 'white';
-            ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
-            ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
-            
-            const hintSize = Math.floor(baseSize * 0.28);
-            ctx.font = `bold ${hintSize}px sans-serif`;
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center'; 
-            ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
-            ctx.textAlign = 'left'; 
         }
 
             document.getElementById('downloadBtn').addEventListener('click', function() {
