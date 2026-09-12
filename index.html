@@ -765,7 +765,7 @@
         document.getElementById('startCameraBtn').addEventListener('click', syncNetworkTime);
         document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
         // ========================================================       
-        
+
         function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -784,7 +784,17 @@
             const marginX = canvas.width * (getVal('posX') / 100);
             const marginY = canvas.height * (getVal('posY') / 100);
 
-            const now = new Date();
+            // Tính toán thời gian thực tế chống gian lận
+            let now;
+            if (window.secureTime.isVerified) {
+                // Thời gian in ra = Giờ chuẩn máy chủ + Khoảng thời gian đã trôi qua
+                const elapsed = performance.now() - window.secureTime.performanceMark;
+                now = new Date(window.secureTime.serverTimestamp + elapsed);
+            } else {
+                // Dự phòng nếu trạm không có internet
+                now = new Date(); 
+            }
+
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const dateStr = `${now.getDate()} Tháng ${now.getMonth() + 1}, ${now.getFullYear()}`;
             const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
