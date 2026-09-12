@@ -868,6 +868,47 @@
             ctx.font = `normal ${subTextSize}px sans-serif`;
             ctx.fillStyle = '#E0E0E0';
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
+            // ========================================================
+            // 7. IN MÃ QR BẢN ĐỒ GOOGLE MAPS (GÓC TRÊN CÙNG BÊN PHẢI)
+            // ========================================================
+            if (window.exactGPS && window.exactGPS !== "") {
+                // Xóa dấu cách trong tọa độ để tạo Link Google Maps chuẩn
+                const gpsForLink = window.exactGPS.replace(/\s/g, '');
+                const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
+                
+                // Dùng QRious tạo mã QR ẩn trong bộ nhớ
+                const qr = new QRious({
+                    value: mapsUrl,
+                    size: 300, // Kích thước xuất ra nét căng
+                    background: 'white',
+                    foreground: 'black',
+                    level: 'M' // Độ sửa lỗi trung bình
+                });
+
+                // Tính toán vị trí: Góc trên cùng bên PHẢI
+                const qrSize = baseSize * 3.2; // Độ lớn của mã QR
+                const qrTopX = canvas.width - marginX - qrSize;
+                const qrTopY = canvas.height * 0.04; // Cách lề trên 4% (Bằng hàng với Logo EVN)
+
+                // Vẽ một lớp viền trắng mỏng lót dưới QR cho đẹp và dễ quét
+                ctx.shadowColor = 'transparent';
+                ctx.fillStyle = 'white';
+                ctx.fillRect(qrTopX - 4, qrTopY - 4, qrSize + 8, qrSize + 8);
+
+                // In hình ảnh QR lên khung canvas
+                ctx.drawImage(qr.canvas, qrTopX, qrTopY, qrSize, qrSize);
+                
+                // In thêm dòng chữ nhỏ "Quét mở Bản đồ" ngay dưới mã QR
+                const hintSize = Math.floor(baseSize * 0.3);
+                ctx.font = `bold ${hintSize}px sans-serif`;
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center'; // Căn giữa chữ so với QR
+                ctx.fillText("Quét mở Bản đồ", qrTopX + (qrSize / 2), qrTopY + qrSize + (baseSize * 0.2));
+                
+                // Reset lại căn lề trái để không ảnh hưởng các thao tác vẽ khác
+                ctx.textAlign = 'left'; 
+            }
+
         }
 
             document.getElementById('downloadBtn').addEventListener('click', function() {
