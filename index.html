@@ -789,7 +789,7 @@
         document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
         // ========================================================
 
-        function drawWatermark() {
+       function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -881,7 +881,7 @@
             if (customText !== "") {
                 const noteSize = Math.floor(baseSize * 0.45);
                 ctx.font = `bold ${noteSize}px sans-serif`;
-                const fullText = `${customText}`; 
+                const fullText = `${customText}`; // (Đã bỏ icon tờ giấy theo ý bạn)
                 
                 // Bước 1: Đo chiều dài của dòng chữ để làm hộp vừa vặn
                 const textWidth = ctx.measureText(fullText).width;
@@ -916,49 +916,48 @@
             }
 
             // ========================================================
-            // 6. IN MÃ QR (FIX LỖI PWA IOS: LUÔN VẼ KỂ CẢ KHI MẤT GPS)
+            // 6. IN MÃ QR (BẰNG CHỨNG GỐC + LINK MAPS BẤM TRỰC TIẾP)
             // ========================================================
-            // Xử lý link Map: Nếu có GPS thì tạo link, không có thì báo chuỗi mặc định
-            let mapsUrl = "Chưa cấp quyền GPS hoặc mất tín hiệu";
             if (window.exactGPS && window.exactGPS !== "") {
+                const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
+                const deviceName = customTextInput.value.trim() || "Chưa nhập";
+                
+                // Xóa dấu cách trong tọa độ để link không bị đứt đoạn khi gửi qua Zalo
                 const gpsForLink = window.exactGPS.replace(/\s/g, '');
-                mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
+                const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
+                
+                // Gom thông tin, thay dòng "Tọa độ" thành đường link Maps trực tiếp
+                const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}${timeStatus}\n- Vị trí: ${mapsUrl}`;
+                
+                // Ép chuẩn mã hóa UTF-8
+                const utf8Payload = unescape(encodeURIComponent(securityPayload));
+
+                const qr = new QRious({
+                    value: utf8Payload, 
+                    size: 300, 
+                    background: 'white',
+                    foreground: 'black',
+                    level: 'M'
+                });
+
+                const qrSize = baseSize * 1.5; 
+                const getVal = (id) => document.getElementById(id).value;
+                const qrX = canvas.width * (getVal('logoX') / 100);
+                const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
+
+                ctx.shadowColor = 'transparent';
+                ctx.fillStyle = 'white';
+                ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
+                ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
+                
+                const hintSize = Math.floor(baseSize * 0.28);
+                ctx.font = `bold ${hintSize}px sans-serif`;
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center'; 
+                ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
+                ctx.textAlign = 'left'; 
             }
 
-            const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
-            const deviceName = customTextInput.value.trim() || "Chưa nhập";
-            
-            // Gom thông tin, thay dòng "Tọa độ" thành đường link Maps trực tiếp (hoặc báo lỗi nếu mất GPS)
-            const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}${timeStatus}\n- Vị trí: ${mapsUrl}`;
-            
-            // Ép chuẩn mã hóa UTF-8
-            const utf8Payload = unescape(encodeURIComponent(securityPayload));
-
-            // KHỐI VẼ QR BÂY GIỜ ĐÃ ĐƯỢC GIẢI PHÓNG KHỎI ĐIỀU KIỆN GPS
-            const qr = new QRious({
-                value: utf8Payload, 
-                size: 300, 
-                background: 'white',
-                foreground: 'black',
-                level: 'M'
-            });
-
-            const qrSize = baseSize * 1.5; 
-            const getVal = (id) => document.getElementById(id).value;
-            const qrX = canvas.width * (getVal('logoX') / 100);
-            const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
-
-            ctx.shadowColor = 'transparent';
-            ctx.fillStyle = 'white';
-            ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
-            ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
-            
-            const hintSize = Math.floor(baseSize * 0.28);
-            ctx.font = `bold ${hintSize}px sans-serif`;
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center'; 
-            ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
-            ctx.textAlign = 'left'; 
         }
 
             document.getElementById('downloadBtn').addEventListener('click', function() {
