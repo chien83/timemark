@@ -788,7 +788,7 @@
         document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
         // ========================================================
 
-        function drawWatermark() {
+       function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -806,15 +806,21 @@
             const marginX = canvas.width * (getVal('posX') / 100);
             const marginY = canvas.height * (getVal('posY') / 100);
 
-            // Tính toán thời gian thực tế chống gian lận
+            // ==========================================
+            // BƯỚC 2A: PHÂN LOẠI GIỜ CHUẨN & GIỜ MÁY
+            // ==========================================
             let now;
-            if (window.secureTime.isVerified) {
-                // Thời gian in ra = Giờ chuẩn máy chủ + Khoảng thời gian đã trôi qua
+            let timeStatus = ""; // Biến chứa Dấu tích xanh hoặc Cảnh báo
+            
+            if (window.secureTime && window.secureTime.isVerified) {
+                // Dùng đồng hồ phần cứng (performance). Nhân viên lùi giờ điện thoại vô tác dụng!
                 const elapsed = performance.now() - window.secureTime.performanceMark;
                 now = new Date(window.secureTime.serverTimestamp + elapsed);
+                timeStatus = " [✔ Chuẩn QT]"; 
             } else {
-                // Dự phòng nếu trạm không có internet
+                // Mất mạng, bắt buộc dùng giờ điện thoại
                 now = new Date(); 
+                timeStatus = " [⚠️ Giờ Máy]"; 
             }
 
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
