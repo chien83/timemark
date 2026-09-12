@@ -1,4 +1,4 @@
-const CACHE_NAME = 'timemark-v1';
+const CACHE_NAME = 'timemark-v2';
 
 // Danh sách các file cần lưu offline (Đường dẫn tương đối)
 const urlsToCache = [
@@ -6,7 +6,8 @@ const urlsToCache = [
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './qrious.min.js' // <--- HÃY THÊM DÒNG NÀY VÀO DANH SÁCH
 ];
 
 // Sự kiện Install: Lưu trữ file vào bộ nhớ Cache của điện thoại
