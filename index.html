@@ -876,10 +876,11 @@
                 ctx.font = `bold ${stationSize}px sans-serif`;
                 ctx.fillStyle = '#3498db'; 
                 ctx.fillText(`${stationSelectEl.value}`, marginX, currentLineY);
-                currentLineY += (baseSize * 0.5); 
+                // TĂNG KHOẢNG CÁCH: Đổi từ 0.42 xuống 0.55 để kéo dòng Thiết bị xuống 
+                currentLineY += (baseSize * 0.55); 
             }
 
-            // 4. IN GHI CHÚ THIẾT BỊ
+            // 4. IN GHI CHÚ THIẾT BỊ (Highlight ôm sát chữ)
             const customText = customTextInput.value.trim();
             if (customText !== "") {
                 const noteSize = Math.floor(baseSize * 0.45);
@@ -887,12 +888,16 @@
                 const fullText = `${customText}`; 
                 
                 const textWidth = ctx.measureText(fullText).width;
-                const padX = baseSize * 0.15; 
-                const padY = baseSize * 0.1;  
+                const padX = baseSize * 0.12; // Giảm lề ngang một chút cho cân đối
+                
+                // GIẢM CHIỀU CAO HỘP: Ép lề dọc (padY) mỏng lại để ôm sát chữ
+                const padY = baseSize * 0.05; // Đổi từ 0.1 xuống 0.05
                 
                 ctx.shadowColor = 'transparent';
                 ctx.fillStyle = '#2ecc71'; 
-                ctx.fillRect(marginX - padX, currentLineY - padY, textWidth + (padX * 2), noteSize + (padY * 2.5));
+                
+                // Chiều cao hộp được ép lại (chỉ nhân 2.2 thay vì 2.5) để vừa khít dấu tiếng Việt
+                ctx.fillRect(marginX - padX, currentLineY - padY, textWidth + (padX * 2), noteSize + (padY * 2.2));
                 
                 ctx.fillStyle = '#ffffff'; 
                 ctx.fillText(fullText, marginX, currentLineY);
