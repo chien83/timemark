@@ -773,7 +773,7 @@
                 const noteSize = Math.floor(baseSize * 0.45); // Giảm từ 0.5 xuống 0.45
                 ctx.font = `bold ${noteSize}px sans-serif`;
                 ctx.fillStyle = '#2ecc71'; 
-                ctx.fillText(`📝 ${customText}`, marginX, currentLineY);
+                ctx.fillText(` ${customText}`, marginX, currentLineY);
             }
 
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
