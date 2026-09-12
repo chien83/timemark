@@ -706,10 +706,17 @@
                         getLocationBtn.innerText = "📍 Định vị lại";
                     }
                 }, function(error) {
-                    // Nếu là chạy tự động thì im lặng, nếu bấm tay thì báo lỗi
-                    if (isManual) alert("Lỗi: Bạn chưa cấp quyền Vị trí (Location) cho trình duyệt web!");
+                    if (isManual) {
+                        let msg = "⚠️ LỖI ĐỊNH VỊ: ";
+                        if (error.code === 1) msg += "Apple đang chặn quyền GPS. Hãy xóa icon ngoài MH chính, xóa lịch sử Safari và thêm lại!";
+                        else if (error.code === 2) msg += "Không có tín hiệu GPS (Hãy ra chỗ thoáng hơn).";
+                        else if (error.code === 3) msg += "Quá thời gian chờ định vị (Timeout). Hãy thử bấm lại!";
+                        else msg += error.message;
+                        alert(msg);
+                    }
                     getLocationBtn.innerText = "📍 Định vị lại";
-                }, { enableHighAccuracy: true, timeout: 10000 });
+                }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }); 
+                // (Đã tăng timeout lên 20s để iOS có đủ thời gian dò vệ tinh)
             } else {
                 if (isManual) alert("Trình duyệt của điện thoại không hỗ trợ GPS.");
             }
