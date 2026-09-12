@@ -726,11 +726,11 @@
         getLocationBtn.addEventListener('click', () => fetchLocation(true));
 
         // 2. TỰ ĐỘNG CHẠY KHI VỪA MỞ APP
-        window.addEventListener('load', () => fetchLocation(false));
+        // window.addEventListener('load', () => fetchLocation(false));
 
         // 3. TỰ ĐỘNG CHẠY KHI MỞ CAMERA (Đảm bảo vị trí luôn mới nhất khi di chuyển)
-        document.getElementById('startCameraBtn').addEventListener('click', () => fetchLocation(false));
-        document.getElementById('nativeCameraInput').addEventListener('click', () => fetchLocation(false));
+       // document.getElementById('startCameraBtn').addEventListener('click', () => fetchLocation(false));
+       // document.getElementById('nativeCameraInput').addEventListener('click', () => fetchLocation(false));
 
         // Vẫn giữ tính năng vẽ trực tiếp khi tự gõ tay bằng bàn phím
         locationInput.addEventListener('input', drawWatermark);
