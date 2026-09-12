@@ -850,14 +850,23 @@
             }
 
             // ========================================================
-            // 6. IN MÃ QR BẢN ĐỒ (VÀO ĐÚNG VỊ TRÍ CHỮ TIMEMARK CŨ)
+            // 6. IN MÃ QR BẢN ĐỒ VÀ CHỮ KÝ SỐ CHỐNG CẮT GHÉP
             // ========================================================
             if (window.exactGPS && window.exactGPS !== "") {
                 const gpsForLink = window.exactGPS.replace(/\s/g, '');
                 const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
                 
+                // --- BẮT ĐẦU: THUẬT TOÁN TẠO CHỮ KÝ SỐ ---
+                // Thu thập bằng chứng hiện tại trên màn hình
+                const stationName = stationSelect.value || "Không rõ";
+                const deviceName = customTextInput.value.trim() || "Chưa nhập";
+                
+                // Gộp toàn bộ thông tin thành 1 khối văn bản bí mật
+                const securityPayload = `[XÁC THỰC BẢN GỐC]\n🏢 Trạm: ${stationName}\n📝 Cụm/TB: ${deviceName}\n⏱️ Thời gian: ${timeStr} - ${dateStr}\n📍 Vị trí: ${mapsUrl}`;
+                // --- KẾT THÚC: THUẬT TOÁN TẠO CHỮ KÝ SỐ ---
+
                 const qr = new QRious({
-                    value: mapsUrl,
+                    value: securityPayload, // <-- Đưa khối văn bản bí mật vào QR thay vì chỉ đưa Link
                     size: 300, 
                     background: 'white',
                     foreground: 'black',
