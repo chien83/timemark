@@ -850,23 +850,23 @@
             }
 
             // ========================================================
-            // 6. IN MÃ QR BẢN ĐỒ VÀ CHỮ KÝ SỐ CHỐNG CẮT GHÉP
+            // 6. IN MÃ QR BẢN ĐỒ VÀ CHỮ KÝ SỐ CHỐNG CẮT GHÉP (FIX LỖI ZALO)
             // ========================================================
             if (window.exactGPS && window.exactGPS !== "") {
                 const gpsForLink = window.exactGPS.replace(/\s/g, '');
                 const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
                 
-                // --- BẮT ĐẦU: THUẬT TOÁN TẠO CHỮ KÝ SỐ ---
-                // Thu thập bằng chứng hiện tại trên màn hình
                 const stationName = stationSelect.value || "Không rõ";
                 const deviceName = customTextInput.value.trim() || "Chưa nhập";
                 
-                // Gộp toàn bộ thông tin thành 1 khối văn bản bí mật
-                const securityPayload = `[XÁC THỰC BẢN GỐC]\n🏢 Trạm: ${stationName}\n📝 Cụm/TB: ${deviceName}\n⏱️ Thời gian: ${timeStr} - ${dateStr}\n📍 Vị trí: ${mapsUrl}`;
-                // --- KẾT THÚC: THUẬT TOÁN TẠO CHỮ KÝ SỐ ---
+                // 1. Đưa Link lên dòng ĐẦU TIÊN để Zalo tự nhận diện thành Nút bấm Mở Web
+                const securityPayload = `${mapsUrl}\n\n[XÁC THỰC BẢN GỐC]\nTrạm: ${stationName}\nCụm/TB: ${deviceName}\nThời gian: ${timeStr} - ${dateStr}`;
+                
+                // 2. Ép chuẩn mã hóa UTF-8 để khắc phục lỗi quét ra ô "Văn bản" trắng tinh
+                const utf8Payload = unescape(encodeURIComponent(securityPayload));
 
                 const qr = new QRious({
-                    value: securityPayload, // <-- Đưa khối văn bản bí mật vào QR thay vì chỉ đưa Link
+                    value: utf8Payload, // Đưa dữ liệu đã ép chuẩn vào
                     size: 300, 
                     background: 'white',
                     foreground: 'black',
@@ -875,29 +875,20 @@
 
                 const qrSize = baseSize * 1.5; 
                 
-                // 1. Tận dụng lại biến Căn lề của chữ Timemark cũ (logoX = 77%, logoY = 92%)
                 const getVal = (id) => document.getElementById(id).value;
                 const qrX = canvas.width * (getVal('logoX') / 100);
-                
-                // 2. Kéo mã QR lên một chút (trừ đi qrSize) để nó nằm ngay trên đường chân chữ cũ
                 const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
 
-                // 3. Vẽ viền lót nền trắng
                 ctx.shadowColor = 'transparent';
                 ctx.fillStyle = 'white';
                 ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
-
-                // 4. In mã QR
                 ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
                 
-                // 5. In chữ chú thích căn giữa theo mã QR
                 const hintSize = Math.floor(baseSize * 0.28);
                 ctx.font = `bold ${hintSize}px sans-serif`;
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center'; 
                 ctx.fillText("Quét mở Bản đồ", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
-                
-                // 6. Trả lại định dạng mặc định
                 ctx.textAlign = 'left'; 
             }
 
