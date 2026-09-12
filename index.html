@@ -199,7 +199,10 @@
                     <button id="getLocationBtn" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; transition: 0.2s;">Tự động lấy vị trí</button>
                 </div>
                 <input type="text" id="locationInput" value="Phú Thọ, P. Hòa Bình" style="margin-bottom: 15px;">
-                
+                <label>🏢 Chọn Trạm / Khu vực:</label>
+                <select id="stationSelect" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #555; background: #111; color: var(--primary); font-size: 15px; margin-bottom: 15px; font-weight: bold; cursor: pointer;">
+                    <!-- Javascript sẽ tự động điền tên các trạm vào đây -->
+                </select>
                 <label>📝 Chọn hoặc Nhập Ghi chú (Mã TB):</label>
                 <div style="display: flex; gap: 8px;">
                     <!-- Vùng chứa Input và Nút Mũi tên -->
@@ -475,62 +478,99 @@
         galleryInput.addEventListener('change', (e) => handleFileUpload(e, 'library'));
 
         const locationInput = document.getElementById('locationInput');
+        const stationSelect = document.getElementById('stationSelect');
         const customTextInput = document.getElementById('customTextInput');
         const saveDeviceBtn = document.getElementById('saveDeviceBtn');
         const dropdownToggleBtn = document.getElementById('dropdownToggleBtn');
         const customDropdownList = document.getElementById('customDropdownList');
 
-        // 1. THƯ VIỆN CỨNG
-        const hardcodedDevices = [
-            "Máy cắt 271", "Máy cắt 272", "Máy cắt 221", "Máy cắt 222", 
-            "Dao cách ly 271-1", "Dao cách ly 271-7", "Tủ MK", 
-            "Tủ điều khiển bảo vệ", "Biến dòng điện (TI)", 
-            "Biến điện áp (TU)", "Máy biến áp AT1", "Máy biến áp AT2"
-        ];
+        // 1. THƯ VIỆN CỨNG ĐƯỢC PHÂN NHÓM THEO TRẠM (Cấu trúc Từ điển Object)
+        const hardcodedData = {
+            "Trạm 500kV Hòa Bình": [
+                "Máy cắt 271", "Máy cắt 272", "Máy cắt 221", "Máy cắt 222", 
+                "Dao cách ly 271-1", "Dao cách ly 271-7", "Tủ MK", "Biến dòng điện (TI)"
+            ],
+            "Trạm 220kV (Mẫu)": [
+                "Máy cắt 231", "Máy cắt 232", "Dao cách ly 231-1", "Máy biến áp AT2"
+            ],
+            "Khác (Thiết bị chung)": [
+                "Tủ điều khiển bảo vệ", "Rơ le F87", "Bình ắc quy"
+            ]
+        };
 
+        // 2. KHỞI TẠO DANH SÁCH TRẠM VÀO Ô SELECT
+        function initStations() {
+            stationSelect.innerHTML = '';
+            
+            // Lấy danh sách tên trạm từ code cứng
+            const stations = Object.keys(hardcodedData);
+            
+            // Lấy thêm các trạm nếu sau này user có tính năng tự tạo (dự phòng)
+            let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
+            const customStations = Object.keys(userStationData);
+            
+            // Trộn danh sách trạm (xóa trùng lặp)
+            const allStations = [...new Set([...stations, ...customStations])];
+
+            allStations.forEach(station => {
+                const opt = document.createElement('option');
+                opt.value = station;
+                opt.innerText = station;
+                stationSelect.appendChild(opt);
+            });
+
+            // LẮNG NGHE SỰ KIỆN: KHI ĐỔI TRẠM -> TẢI LẠI THIẾT BỊ
+            stationSelect.addEventListener('change', loadDeviceList);
+        }
+
+        // 3. TẢI DANH SÁCH THIẾT BỊ (Dựa theo Trạm đang được chọn trên màn hình)
         function loadDeviceList() {
-            let userDevices = JSON.parse(localStorage.getItem('myCustomDevices')) || [];
+            const currentStation = stationSelect.value;
+            if(!currentStation) return;
+
+            // Lấy thiết bị gốc của trạm đó
+            const hardcodedDevices = hardcodedData[currentStation] || [];
+            
+            // Lấy thiết bị nhân viên tự lưu riêng cho trạm đó
+            let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
+            let userDevices = userStationData[currentStation] || [];
+            
             const combinedDevices = [...new Set([...hardcodedDevices, ...userDevices])];
             
-            customDropdownList.innerHTML = ''; // Xóa list cũ
+            customDropdownList.innerHTML = ''; 
             combinedDevices.forEach(device => {
                 const li = document.createElement('li');
                 li.innerText = device;
-                // Làm đẹp cho từng dòng trong danh sách
                 li.style.padding = '12px 15px';
                 li.style.borderBottom = '1px solid #444';
                 li.style.color = 'white';
                 li.style.cursor = 'pointer';
                 li.style.fontSize = '14px';
                 
-                // Hiệu ứng đổi màu khi chạm tay vào (trên máy tính)
                 li.addEventListener('mouseover', () => li.style.background = '#444');
                 li.addEventListener('mouseout', () => li.style.background = 'transparent');
                 
-                // KHI BẤM CHỌN 1 THIẾT BỊ TRONG DANH SÁCH
                 li.addEventListener('click', () => {
-                    customTextInput.value = device; // Điền chữ vào ô
-                    customDropdownList.style.display = 'none'; // Ẩn danh sách đi
-                    drawWatermark(); // Đóng dấu ngay lập tức lên ảnh
+                    customTextInput.value = device; 
+                    customDropdownList.style.display = 'none'; 
+                    drawWatermark(); 
                 });
                 
                 customDropdownList.appendChild(li);
             });
+            
+            // Reset ô nhập chữ mỗi khi đổi sang trạm mới để tránh nhầm lẫn
+            customTextInput.value = "";
+            drawWatermark();
         }
 
-        loadDeviceList();
-
-        // 2. KHI BẤM VÀO NÚT MŨI TÊN (Bật/Tắt danh sách)
+        // 4. BẬT/TẮT DANH SÁCH BẰNG NÚT MŨI TÊN (▼)
         dropdownToggleBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            if (customDropdownList.style.display === 'none') {
-                customDropdownList.style.display = 'block';
-            } else {
-                customDropdownList.style.display = 'none';
-            }
+            customDropdownList.style.display = customDropdownList.style.display === 'none' ? 'block' : 'none';
         });
 
-        // 3. THÔNG MINH: Tự động ẩn danh sách nếu bấm ra khoảng trống ngoài màn hình
+        // Ẩn danh sách nếu bấm ra khoảng trống ngoài màn hình
         document.addEventListener('click', (e) => {
             if (!customTextInput.contains(e.target) && 
                 !dropdownToggleBtn.contains(e.target) && 
@@ -539,26 +579,40 @@
             }
         });
 
-        // 4. Xử lý nút "Lưu TB" 
+        // 5. XỬ LÝ NÚT "LƯU TB" (Bảo mật: Ghi nhận đúng vào Trạm đang chọn)
         saveDeviceBtn.addEventListener('click', () => {
             const newDevice = customTextInput.value.trim();
+            const currentStation = stationSelect.value;
+
             if (newDevice === "") {
                 alert("Vui lòng gõ tên thiết bị trước khi lưu!");
                 return;
             }
 
-            let userDevices = JSON.parse(localStorage.getItem('myCustomDevices')) || [];
+            let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
             
-            if (hardcodedDevices.includes(newDevice) || userDevices.includes(newDevice)) {
-                alert("Thiết bị này đã có sẵn trong danh sách rồi!");
+            // Nếu trạm này chưa từng có dữ liệu cá nhân nào, tạo một ngăn tủ (mảng) mới cho nó
+            if (!userStationData[currentStation]) {
+                userStationData[currentStation] = [];
+            }
+
+            const hardcodedDevices = hardcodedData[currentStation] || [];
+            
+            if (hardcodedDevices.includes(newDevice) || userStationData[currentStation].includes(newDevice)) {
+                alert(`Thiết bị này đã có sẵn trong danh sách của ${currentStation}!`);
             } else {
-                userDevices.push(newDevice);
-                localStorage.setItem('myCustomDevices', JSON.stringify(userDevices));
+                // Nhét thiết bị mới vào đúng "ngăn tủ" của trạm đó
+                userStationData[currentStation].push(newDevice);
+                localStorage.setItem('myCustomStationData', JSON.stringify(userStationData));
                 
                 loadDeviceList(); 
-                alert(`Đã thêm "${newDevice}" vào thư viện cá nhân của bạn!`);
+                alert(`Đã lưu thành công "${newDevice}" vào hồ sơ của ${currentStation}!`);
             }
         });
+
+        // 6. KÍCH HOẠT HỆ THỐNG KHI MỞ APP
+        initStations();
+        loadDeviceList();
         const getLocationBtn = document.getElementById('getLocationBtn');
 
         // TÁCH HÀM LẤY VỊ TRÍ ĐỂ CÓ THỂ CHẠY TỰ ĐỘNG NHIỀU LẦN
