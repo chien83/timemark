@@ -200,8 +200,14 @@
                 </div>
                 <input type="text" id="locationInput" value="Phú Thọ, P. Hòa Bình" style="margin-bottom: 15px;">
                 
-                <label>📝 Nhập Ghi chú (Mã TB, text...):</label>
-                <input type="text" id="customTextInput" placeholder="VD: MC571/A...">
+                <label>📝 Chọn hoặc Nhập Ghi chú (Mã TB):</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="customTextInput" list="deviceList" placeholder="Gõ tên TB..." style="flex: 1; margin-bottom: 0;">
+                    <button id="saveDeviceBtn" style="background: var(--primary); color: black; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;">💾 Lưu TB</button>
+                </div>
+                
+                <!-- Thẻ datalist để trống, Javascript sẽ tự động bơm thư viện CỨNG + MỀM vào đây -->
+                <datalist id="deviceList"></datalist>
             </div>
 
             <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
