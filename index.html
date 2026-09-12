@@ -208,10 +208,13 @@
             </div>
 
             <div>
-                <label style="font-size: 12px; color: #aaa;">📍 Ép Tọa độ GPS (VD: 20.8390, 105.3329):</label>
-                <input type="text" id="adminGPSInput" placeholder="Nhập tọa độ để ghi đè..." style="width: 100%; padding: 10px; background: #111; color: #f1c40f; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box; margin-top: 5px;">
+                <label style="font-size: 12px; color: #aaa;">📍 Ép Tọa độ GPS (Hoặc lấy từ ảnh gốc):</label>
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <input type="text" id="adminGPSInput" placeholder="Nhập tọa độ..." style="width: 100%; padding: 10px; background: #111; color: #f1c40f; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box;">
+                    <button id="openMapBtn" style="background: #3498db; color: white; border: none; border-radius: 6px; padding: 0 10px; cursor: pointer; font-weight: bold; white-space: nowrap;">🗺️ Mở Map</button>
+                </div>
             </div>
-        </div>        
+        </div>    
         <!-- TOÀN BỘ KHU VỰC KHOANH ĐỎ ĐƯỢC BỌC VÀO ĐÂY (Mặc định ẩn đi) -->
 
         <div id="mainEditPanel" style="display: none; margin-bottom: 15px;">
