@@ -7,6 +7,7 @@ const urlsToCache = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  './logo_npt.png',
   './qrious.min.js' // <--- HÃY THÊM DÒNG NÀY VÀO DANH SÁCH
 ];
 
