@@ -463,65 +463,69 @@
         const customTextInput = document.getElementById('customTextInput');
         const getLocationBtn = document.getElementById('getLocationBtn');
 
-        // TÍNH NĂNG TỰ ĐỘNG LẤY GPS
-        getLocationBtn.addEventListener('click', () => {
+        // TÁCH HÀM LẤY VỊ TRÍ ĐỂ CÓ THỂ CHẠY TỰ ĐỘNG NHIỀU LẦN
+        function fetchLocation(isManual = false) {
             if ("geolocation" in navigator) {
                 getLocationBtn.innerText = "⏳ Đang dò GPS...";
                 getLocationBtn.style.color = "white";
                 
-                // Yêu cầu trình duyệt mở cảm biến GPS
                 navigator.geolocation.getCurrentPosition(async function(position) {
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
                     
                     try {
-                        // Gọi bản đồ OpenStreetMap để dịch tọa độ thành tên Phường, Xã
                         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=vi`);
                         const data = await response.json();
                         
                         if (data && data.address) {
                             const addr = data.address;
-                            // Lọc thông tin từ nhỏ đến lớn
+                            // Thuật toán bóc tách khắt khe: Bắt buộc tìm Phường/Xã và Tỉnh
                             const ward = addr.suburb || addr.village || addr.quarter || addr.hamlet || "";
-                            const district = addr.county || addr.city_district || addr.town || "";
-                            const city = addr.city || addr.state || addr.province || "";
+                            const province = addr.province || addr.state || addr.city || "";
                             
-                            let parts = [];
-                            if (ward) parts.push(ward);
-                            if (district) parts.push(district);
-                            if (city && !district) parts.push(city);
-                            
-                            // Lấy 2 địa danh chi tiết nhất (VD: Phường ABC, Quận XYZ)
-                            let finalStr = parts.slice(0, 2).join(', ');
-                            if(!finalStr) finalStr = `${city}`; 
+                            let finalStr = "";
+                            if (ward && province) {
+                                finalStr = `${ward}, ${province}`; 
+                            } else {
+                                finalStr = ward || province || "Đã lấy tọa độ GPS";
+                            }
 
-                            // Tự động điền chữ vào ô và vẽ lên ảnh
                             locationInput.value = finalStr;
                             drawWatermark(); 
                             
                             getLocationBtn.innerText = "✅ Đã định vị";
                             getLocationBtn.style.color = "#27ae60";
                             
-                            // Trả nút về trạng thái cũ sau 3 giây
                             setTimeout(() => { 
                                 getLocationBtn.innerText = "📍 Định vị lại"; 
                                 getLocationBtn.style.color = "var(--primary)";
                             }, 3000);
                         }
                     } catch (error) {
-                        alert("Không tải được tên đường. Sẽ dùng tọa độ thô.");
+                        if (isManual) alert("Không tải được tên đường. Sẽ dùng tọa độ thô.");
                         locationInput.value = `GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
                         drawWatermark();
-                        getLocationBtn.innerText = "Tự động lấy vị trí";
+                        getLocationBtn.innerText = "📍 Định vị lại";
                     }
                 }, function(error) {
-                    alert("Lỗi: Bạn chưa cấp quyền Vị trí (Location) cho trình duyệt web!");
-                    getLocationBtn.innerText = "Tự động lấy vị trí";
+                    // Nếu là chạy tự động thì im lặng, nếu bấm tay thì báo lỗi
+                    if (isManual) alert("Lỗi: Bạn chưa cấp quyền Vị trí (Location) cho trình duyệt web!");
+                    getLocationBtn.innerText = "📍 Định vị lại";
                 }, { enableHighAccuracy: true, timeout: 10000 });
             } else {
-                alert("Trình duyệt của điện thoại không hỗ trợ GPS.");
+                if (isManual) alert("Trình duyệt của điện thoại không hỗ trợ GPS.");
             }
-        });
+        }
+
+        // 1. GÁN VÀO NÚT BẤM (Dành cho khi bạn muốn chủ động tải lại vị trí)
+        getLocationBtn.addEventListener('click', () => fetchLocation(true));
+
+        // 2. TỰ ĐỘNG CHẠY KHI VỪA MỞ APP
+        window.addEventListener('load', () => fetchLocation(false));
+
+        // 3. TỰ ĐỘNG CHẠY KHI MỞ CAMERA (Đảm bảo vị trí luôn mới nhất khi di chuyển)
+        document.getElementById('startCameraBtn').addEventListener('click', () => fetchLocation(false));
+        document.getElementById('nativeCameraInput').addEventListener('click', () => fetchLocation(false));
 
         // Vẫn giữ tính năng vẽ trực tiếp khi tự gõ tay bằng bàn phím
         locationInput.addEventListener('input', drawWatermark);
