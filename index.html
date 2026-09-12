@@ -926,7 +926,7 @@
                 const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
                 
                 // Gom thông tin, thay dòng "Tọa độ" thành đường link Maps trực tiếp
-                const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}\n- Vị trí: ${mapsUrl}`;
+                const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}${timeStatus}\n- Vị trí: ${mapsUrl}`;
                 
                 // Ép chuẩn mã hóa UTF-8
                 const utf8Payload = unescape(encodeURIComponent(securityPayload));
