@@ -202,12 +202,21 @@
                 
                 <label>📝 Chọn hoặc Nhập Ghi chú (Mã TB):</label>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" id="customTextInput" list="deviceList" placeholder="Gõ tên TB..." style="flex: 1; margin-bottom: 0;">
-                    <button id="saveDeviceBtn" style="background: var(--primary); color: black; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;">💾 Lưu TB</button>
+                    <!-- Vùng chứa Input và Nút Mũi tên -->
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" id="customTextInput" placeholder="Gõ tên TB..." style="width: 100%; padding-right: 35px; box-sizing: border-box; margin-bottom: 0;">
+                        <!-- NÚT MŨI TÊN BẠN YÊU CẦU ĐƯỢC CHÈN VÀO ĐÂY -->
+                        <button id="dropdownToggleBtn" style="position: absolute; right: 2px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--primary); font-size: 14px; cursor: pointer; height: 90%; width: 30px; display: flex; align-items: center; justify-content: center;">
+                            ▼
+                        </button>
+                        
+                        <!-- Danh sách thiết bị (Tự thiết kế, mặc định ẩn) -->
+                        <ul id="customDropdownList" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #2a2a2a; border: 1px solid #555; border-radius: 6px; margin: 4px 0 0 0; padding: 0; list-style: none; max-height: 160px; overflow-y: auto; z-index: 999; box-shadow: 0 4px 15px rgba(0,0,0,0.7);">
+                        </ul>
+                    </div>
+                    
+                    <button id="saveDeviceBtn" style="background: var(--primary); color: black; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap;">💾 Lưu TB</button>
                 </div>
-                
-                <!-- Thẻ datalist để trống, Javascript sẽ tự động bơm thư viện CỨNG + MỀM vào đây -->
-                <datalist id="deviceList"></datalist>
             </div>
 
             <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
@@ -468,10 +477,10 @@
         const locationInput = document.getElementById('locationInput');
         const customTextInput = document.getElementById('customTextInput');
         const saveDeviceBtn = document.getElementById('saveDeviceBtn');
-        const deviceList = document.getElementById('deviceList');
+        const dropdownToggleBtn = document.getElementById('dropdownToggleBtn');
+        const customDropdownList = document.getElementById('customDropdownList');
 
-        // 1. THƯ VIỆN CỨNG (Code cố định dùng chung cho toàn bộ nhân viên)
-        // Bạn có thể thêm bớt thiết bị vào giữa 2 dấu ngoặc vuông này tùy ý
+        // 1. THƯ VIỆN CỨNG
         const hardcodedDevices = [
             "Máy cắt 271", "Máy cắt 272", "Máy cắt 221", "Máy cắt 222", 
             "Dao cách ly 271-1", "Dao cách ly 271-7", "Tủ MK", 
@@ -480,25 +489,57 @@
         ];
 
         function loadDeviceList() {
-            // 2. Tải Thư viện Cá nhân (Những thiết bị do nhân viên tự lưu trên máy của họ)
             let userDevices = JSON.parse(localStorage.getItem('myCustomDevices')) || [];
-            
-            // 3. Hợp nhất 2 thư viện (Tự động xóa các tên bị trùng lặp)
             const combinedDevices = [...new Set([...hardcodedDevices, ...userDevices])];
             
-            // 4. Vẽ danh sách tổng hợp ra màn hình
-            deviceList.innerHTML = '';
+            customDropdownList.innerHTML = ''; // Xóa list cũ
             combinedDevices.forEach(device => {
-                const option = document.createElement('option');
-                option.value = device;
-                deviceList.appendChild(option);
+                const li = document.createElement('li');
+                li.innerText = device;
+                // Làm đẹp cho từng dòng trong danh sách
+                li.style.padding = '12px 15px';
+                li.style.borderBottom = '1px solid #444';
+                li.style.color = 'white';
+                li.style.cursor = 'pointer';
+                li.style.fontSize = '14px';
+                
+                // Hiệu ứng đổi màu khi chạm tay vào (trên máy tính)
+                li.addEventListener('mouseover', () => li.style.background = '#444');
+                li.addEventListener('mouseout', () => li.style.background = 'transparent');
+                
+                // KHI BẤM CHỌN 1 THIẾT BỊ TRONG DANH SÁCH
+                li.addEventListener('click', () => {
+                    customTextInput.value = device; // Điền chữ vào ô
+                    customDropdownList.style.display = 'none'; // Ẩn danh sách đi
+                    drawWatermark(); // Đóng dấu ngay lập tức lên ảnh
+                });
+                
+                customDropdownList.appendChild(li);
             });
         }
 
-        // Chạy hàm tải danh sách ngay khi nhân viên vừa mở Web App
         loadDeviceList();
 
-        // 5. Xử lý khi nhân viên bấm "Lưu TB" (Chỉ lưu vào máy cá nhân của người đó)
+        // 2. KHI BẤM VÀO NÚT MŨI TÊN (Bật/Tắt danh sách)
+        dropdownToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (customDropdownList.style.display === 'none') {
+                customDropdownList.style.display = 'block';
+            } else {
+                customDropdownList.style.display = 'none';
+            }
+        });
+
+        // 3. THÔNG MINH: Tự động ẩn danh sách nếu bấm ra khoảng trống ngoài màn hình
+        document.addEventListener('click', (e) => {
+            if (!customTextInput.contains(e.target) && 
+                !dropdownToggleBtn.contains(e.target) && 
+                !customDropdownList.contains(e.target)) {
+                customDropdownList.style.display = 'none';
+            }
+        });
+
+        // 4. Xử lý nút "Lưu TB" 
         saveDeviceBtn.addEventListener('click', () => {
             const newDevice = customTextInput.value.trim();
             if (newDevice === "") {
@@ -508,18 +549,16 @@
 
             let userDevices = JSON.parse(localStorage.getItem('myCustomDevices')) || [];
             
-            // Kiểm tra xem thiết bị đã tồn tại ở 1 trong 2 thư viện chưa
             if (hardcodedDevices.includes(newDevice) || userDevices.includes(newDevice)) {
                 alert("Thiết bị này đã có sẵn trong danh sách rồi!");
             } else {
-                // Thêm vào bộ nhớ của riêng điện thoại đó
                 userDevices.push(newDevice);
                 localStorage.setItem('myCustomDevices', JSON.stringify(userDevices));
                 
-                loadDeviceList(); // Cập nhật lại danh sách xổ xuống ngay lập tức
+                loadDeviceList(); 
                 alert(`Đã thêm "${newDevice}" vào thư viện cá nhân của bạn!`);
             }
-        });        
+        });
         const getLocationBtn = document.getElementById('getLocationBtn');
 
         // TÁCH HÀM LẤY VỊ TRÍ ĐỂ CÓ THỂ CHẠY TỰ ĐỘNG NHIỀU LẦN
