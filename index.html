@@ -305,6 +305,37 @@
         const nativeCameraInput = document.getElementById('nativeCameraInput');
         const galleryInput = document.getElementById('galleryInput');
 
+        // ==========================================
+        // 🔒 TÍNH NĂNG ẨN: KHÓA ADMIN CHO THƯ VIỆN 
+        // ==========================================
+        const secretTrigger = document.getElementById('secretTrigger');
+        const galleryBtnWrapper = document.getElementById('galleryBtnWrapper');
+        let tapCount = 0;
+        let tapTimer;
+
+        secretTrigger.addEventListener('click', () => {
+            tapCount++;
+            clearTimeout(tapTimer); // Xóa bộ hẹn giờ cũ
+            
+            // Nếu bấm đủ 5 lần liên tiếp
+            if (tapCount === 5) {
+                tapCount = 0; // Reset bộ đếm
+                const pwd = prompt("🔒 Chế độ Admin. Nhập mật khẩu:");
+                if (pwd === "hchien83") { // <--- BẠN CÓ THỂ ĐỔI MẬT KHẨU TẠI ĐÂY
+                    galleryBtnWrapper.style.display = 'inline-flex'; // Hiện nút Thư viện
+                    alert("✅ Đã mở khóa nút Thư Viện!");
+                } else if (pwd !== null) {
+                    alert("❌ Sai mật khẩu!");
+                }
+            }
+            
+            // Nếu ngừng bấm quá 1.5 giây thì tự động reset bộ đếm về 0 (để tránh vô tình bấm trúng)
+            tapTimer = setTimeout(() => {
+                tapCount = 0;
+            }, 1500);
+        });
+        // ==========================================
+
         let currentStream = null;
         let lastUsedMode = ''; 
         let img = new Image();
