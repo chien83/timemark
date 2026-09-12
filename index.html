@@ -850,7 +850,7 @@
             }
 
             // ========================================================
-            // 6. IN MÃ QR BẢN ĐỒ (GÓC DƯỚI CÙNG BÊN PHẢI - THAY THẾ CHỮ TIMEMARK)
+            // 6. IN MÃ QR BẢN ĐỒ (VÀO ĐÚNG VỊ TRÍ CHỮ TIMEMARK CŨ)
             // ========================================================
             if (window.exactGPS && window.exactGPS !== "") {
                 const gpsForLink = window.exactGPS.replace(/\s/g, '');
@@ -864,29 +864,31 @@
                     level: 'M'
                 });
 
-                // Thu nhỏ kích thước đi một nửa (giảm từ 3.2 xuống 1.5)
                 const qrSize = baseSize * 1.5; 
                 
-                // Tính toán tọa độ: Ép sát lề phải và lề dưới cho cân bằng với cụm chữ bên trái
-                const qrX = canvas.width - marginX - qrSize;
-                const qrY = canvas.height - marginY - qrSize - (baseSize * 0.4); // Trừ hao chỗ cho dòng chữ chú thích
+                // 1. Tận dụng lại biến Căn lề của chữ Timemark cũ (logoX = 77%, logoY = 92%)
+                const getVal = (id) => document.getElementById(id).value;
+                const qrX = canvas.width * (getVal('logoX') / 100);
+                
+                // 2. Kéo mã QR lên một chút (trừ đi qrSize) để nó nằm ngay trên đường chân chữ cũ
+                const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
 
-                // Vẽ viền trắng lót nền
+                // 3. Vẽ viền lót nền trắng
                 ctx.shadowColor = 'transparent';
                 ctx.fillStyle = 'white';
                 ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
 
-                // Vẽ QR
+                // 4. In mã QR
                 ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
                 
-                // In dòng chữ chú thích ngay dưới QR
+                // 5. In chữ chú thích căn giữa theo mã QR
                 const hintSize = Math.floor(baseSize * 0.28);
                 ctx.font = `bold ${hintSize}px sans-serif`;
                 ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'center'; // Căn giữa chữ theo hình vuông QR
+                ctx.textAlign = 'center'; 
                 ctx.fillText("Quét mở Bản đồ", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
                 
-                // Trả lại định dạng căn trái mặc định để không lỗi các hàm khác
+                // 6. Trả lại định dạng mặc định
                 ctx.textAlign = 'left'; 
             }
 
