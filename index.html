@@ -623,6 +623,8 @@
                 navigator.geolocation.getCurrentPosition(async function(position) {
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
+                    // THÊM ĐÚNG 1 DÒNG NÀY ĐỂ LƯU TỌA ĐỘ LÀM BẰNG CHỨNG:
+                    window.exactGPS = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
                     
                     try {
                         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=vi`);
@@ -737,16 +739,41 @@
             ctx.fillText(dateStr, dateX, marginY + (baseSize * 0.05));
             ctx.fillText(dayOfWeekStr, dateX, marginY + (baseSize * 0.5));
 
-            // ĐỌC CHỮ ĐỊA CHỈ TỪ Ô NHẬP LIỆU THAY VÌ FIX CỨNG
+            // 1. IN ĐỊA CHỈ (Phường, Tỉnh - Màu trắng mặc định)
             const locationStr = locationInput.value.trim();
-            const locY = marginY + baseSize + (baseSize * 0.2);
+            let currentLineY = marginY + baseSize + (baseSize * 0.2); 
+            
             if (locationStr !== "") {
-                ctx.fillText(locationStr, marginX, locY);
+                ctx.fillText(locationStr, marginX, currentLineY);
+                currentLineY += (baseSize * 0.4); // Đẩy con trỏ vẽ xuống dòng dưới
             }
 
+            // 2. IN TỌA ĐỘ GPS KINH/VĨ ĐỘ (Màu vàng nhạt)
+            if (window.exactGPS && window.exactGPS !== "") {
+                const gpsSize = Math.floor(baseSize * 0.35); 
+                ctx.font = `normal ${gpsSize}px sans-serif`;
+                ctx.fillStyle = '#f1c40f'; 
+                ctx.fillText(`📍 Tọa độ: ${window.exactGPS}`, marginX, currentLineY);
+                currentLineY += (baseSize * 0.45); // Tiếp tục đẩy xuống dòng
+            }
+
+            // 3. IN TÊN TRẠM (Màu xanh dương)
+            const stationSelectEl = document.getElementById('stationSelect');
+            if (stationSelectEl && stationSelectEl.value !== "") {
+                const stationSize = Math.floor(baseSize * 0.45);
+                ctx.font = `bold ${stationSize}px sans-serif`;
+                ctx.fillStyle = '#3498db'; 
+                ctx.fillText(`🏢 Trạm: ${stationSelectEl.value}`, marginX, currentLineY);
+                currentLineY += (baseSize * 0.55); // Tiếp tục đẩy xuống dòng
+            }
+
+            // 4. IN GHI CHÚ THIẾT BỊ (Màu xanh lá)
             const customText = customTextInput.value.trim();
             if (customText !== "") {
-                ctx.fillText(customText, marginX, locY + (baseSize * 0.5));
+                const noteSize = Math.floor(baseSize * 0.5);
+                ctx.font = `bold ${noteSize}px sans-serif`;
+                ctx.fillStyle = '#2ecc71'; 
+                ctx.fillText(`📝 Cụm/TB: ${customText}`, marginX, currentLineY);
             }
 
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
@@ -767,7 +794,7 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
-document.getElementById('downloadBtn').addEventListener('click', function() {
+            document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Đang xử lý...';
