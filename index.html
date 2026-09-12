@@ -508,27 +508,56 @@
             lastUsedMode = mode; 
 
             resetToFreshState();
+            
+            // ==========================================
             // NĂNG LỰC ADMIN: TỰ ĐỘNG HÚT TỌA ĐỘ GỐC CỦA ẢNH TỪ THƯ VIỆN
-            if (mode === 'library' && typeof exifr !== 'undefined') {
-                exifr.gps(file).then(gps => {
-                    if (gps) {
-                        const extractedGPS = `${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`;
-                        document.getElementById('adminGPSInput').value = extractedGPS;
-                        
-                        // Đổi màu nút Mở Map để báo hiệu đã hút thành công
-                        const btn = document.getElementById('openMapBtn');
-                        const oldText = btn.innerText;
-                        btn.innerText = "✅ Đã hút GPS";
-                        btn.style.background = "#2ecc71";
-                        setTimeout(() => { 
-                            btn.innerText = oldText; 
-                            btn.style.background = "#3498db"; 
-                        }, 3000);
-                        
-                        drawWatermark(); // Vẽ lại ảnh để cập nhật tọa độ gốc ngay lập tức
+            // ==========================================
+            if (mode === 'library') {
+                if (typeof exifr !== 'undefined') {
+                    const btn = document.getElementById('openMapBtn');
+                    const oldText = "🗺️ Mở Map";
+                    
+                    // Báo hiệu đang quét tia X
+                    if(btn) {
+                        btn.innerText = "⏳ Đang quét...";
+                        btn.style.background = "#f39c12"; // Màu cam
                     }
-                }).catch(err => console.log("Ảnh này không có dữ liệu GPS ẩn"));
+                    
+                    exifr.gps(file).then(gps => {
+                        if (gps) {
+                            // TÌM THẤY GPS
+                            const extractedGPS = `${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`;
+                            const gpsInput = document.getElementById('adminGPSInput');
+                            if(gpsInput) gpsInput.value = extractedGPS;
+                            
+                            if(btn) {
+                                btn.innerText = "✅ Đã hút GPS";
+                                btn.style.background = "#2ecc71"; // Màu xanh
+                                setTimeout(() => { btn.innerText = oldText; btn.style.background = "#3498db"; }, 4000);
+                            }
+                            
+                            drawWatermark(); // Vẽ lại ảnh với tọa độ gốc
+                        } else {
+                            // KHÔNG CÓ GPS
+                            if(btn) {
+                                btn.innerText = "❌ Ảnh không có GPS";
+                                btn.style.background = "#e74c3c"; // Màu đỏ
+                                setTimeout(() => { btn.innerText = oldText; btn.style.background = "#3498db"; }, 4000);
+                            }
+                        }
+                    }).catch(err => {
+                        // LỖI ĐỌC FILE
+                        if(btn) {
+                            btn.innerText = "❌ Lỗi đọc ảnh";
+                            btn.style.background = "#e74c3c";
+                            setTimeout(() => { btn.innerText = oldText; btn.style.background = "#3498db"; }, 4000);
+                        }
+                    });
+                } else {
+                    console.warn("⚠️ Chưa tải được thư viện exifr.");
+                }
             }
+            // ==========================================
             
             // SỬA LỖI XOAY NGANG: Dùng URL.createObjectURL để bảo toàn dữ liệu EXIF xoay ảnh
             const objectUrl = URL.createObjectURL(file);
@@ -538,8 +567,7 @@
                 let targetWidth = img.naturalWidth || img.width;
                 let targetHeight = img.naturalHeight || img.height;
                 
-                // SỬA LỖI MỜ ẢNH: Khống chế kích thước tối đa là 2000px
-                // Giúp web chạy mượt, ảnh giữ độ sắc nét HD mà không làm điện thoại bị tràn RAM, ban đầu giá trị 2000
+                // SỬA LỖI MỜ ẢNH: Khống chế kích thước tối đa là 2500px
                 const MAX_SIZE = 2500;
                 if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
                     const ratio = Math.min(MAX_SIZE / targetWidth, MAX_SIZE / targetHeight);
