@@ -767,13 +767,28 @@
                 currentLineY += (baseSize * 0.5); // Thu hẹp khoảng cách dòng
             }
 
-            // 4. IN GHI CHÚ THIẾT BỊ (Đã xóa chữ "Cụm/TB:", thu nhỏ size chữ)
+            // 4. IN GHI CHÚ THIẾT BỊ (Highlight kiểu Tem nhãn)
             const customText = customTextInput.value.trim();
             if (customText !== "") {
-                const noteSize = Math.floor(baseSize * 0.45); // Giảm từ 0.5 xuống 0.45
+                const noteSize = Math.floor(baseSize * 0.45);
                 ctx.font = `bold ${noteSize}px sans-serif`;
+                const fullText = `${customText}`;
+                
+                // Bước 1: Đo chiều dài của dòng chữ để làm hộp vừa vặn
+                const textWidth = ctx.measureText(fullText).width;
+                const padX = baseSize * 0.15; // Khoảng cách lề trái/phải của hộp
+                const padY = baseSize * 0.1;  // Khoảng cách lề trên/dưới của hộp
+                
+                // Bước 2: Tạm tắt hiệu ứng bóng đổ để khối nền được vuông vức, sắc nét
+                ctx.shadowColor = 'transparent';
+                
+                // Bước 3: Vẽ khối nền Highlight (Màu Xanh lá)
                 ctx.fillStyle = '#2ecc71'; 
-                ctx.fillText(`${customText}`, marginX, currentLineY);
+                ctx.fillRect(marginX - padX, currentLineY - padY, textWidth + (padX * 2), noteSize + (padY * 2.5));
+                
+                // Bước 4: In chữ đè lên khối nền (Màu Trắng cho nổi bật)
+                ctx.fillStyle = '#ffffff'; 
+                ctx.fillText(fullText, marginX, currentLineY);
             }
 
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
