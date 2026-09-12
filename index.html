@@ -212,7 +212,7 @@
             </div>
         </div>        
         <!-- TOÀN BỘ KHU VỰC KHOANH ĐỎ ĐƯỢC BỌC VÀO ĐÂY (Mặc định ẩn đi) -->
-         
+
         <div id="mainEditPanel" style="display: none; margin-bottom: 15px;">
             <div class="input-box">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -338,13 +338,17 @@
             tapCount++;
             clearTimeout(tapTimer); // Xóa bộ hẹn giờ cũ
             
-            // Nếu bấm đủ 5 lần liên tiếp
             if (tapCount === 5) {
                 tapCount = 0; // Reset bộ đếm
                 const pwd = prompt("🔒 Chế độ Admin. Nhập mật khẩu:");
-                if (pwd === "hchien83") { // <--- BẠN CÓ THỂ ĐỔI MẬT KHẨU TẠI ĐÂY
+                if (pwd === "hchien83") { 
                     galleryBtnWrapper.style.display = 'inline-flex'; // Hiện nút Thư viện
-                    alert("✅ Đã mở khóa nút Thư Viện!");
+                    
+                    // LỆNH MỚI: HIỆN THÊM BẢNG GOD MODE CHO ADMIN
+                    const godPanel = document.getElementById('adminGodModePanel');
+                    if(godPanel) godPanel.style.display = 'block';
+                    
+                    alert("✅ Đã mở khóa Quyền Admin Tối Cao!");
                 } else if (pwd !== null) {
                     alert("❌ Sai mật khẩu!");
                 }
