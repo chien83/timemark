@@ -740,31 +740,53 @@
         });
 
         // ========================================================
-        // TÍNH NĂNG ANTI-FRAUD: ĐỒNG BỘ GIỜ QUỐC TẾ (CHỐNG CHỈNH GIỜ)
+        // TÍNH NĂNG ANTI-FRAUD: ĐỒNG BỘ GIỜ QUỐC TẾ (BẢN VĨNH CỬU)
         // ========================================================
         window.secureTime = { serverTimestamp: null, performanceMark: null, isVerified: false };
 
         async function syncNetworkTime() {
             try {
-                // Lấy giờ Việt Nam từ máy chủ Quốc tế
-                const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
-                const data = await response.json();
+                let serverTimeStr;
+                try {
+                    // Ưu tiên 1: Máy chủ TimeAPI siêu tốc
+                    const res1 = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');
+                    if (!res1.ok) throw new Error();
+                    const data1 = await res1.json();
+                    serverTimeStr = data1.dateTime;
+                } catch (e) {
+                    // Dự phòng 2: Máy chủ WorldTime
+                    const res2 = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+                    const data2 = await res2.json();
+                    serverTimeStr = data2.datetime;
+                }
                 
-                // Lưu lại mốc giờ chuẩn và mốc thời gian phần cứng máy
-                window.secureTime.serverTimestamp = new Date(data.datetime).getTime();
+                // Lưu lại mốc giờ chuẩn và thời gian phần cứng
+                window.secureTime.serverTimestamp = new Date(serverTimeStr).getTime();
                 window.secureTime.performanceMark = performance.now();
                 window.secureTime.isVerified = true;
-                console.log("🔒 Đã chốt giờ chuẩn Quốc tế!");
+                
+                // HIỆU ỨNG: Đổi màu nút Camera sang Xanh lá để báo hiệu đã KHÓA GIỜ THÀNH CÔNG
+                document.getElementById('startCameraBtn').innerHTML = '📸 Cam Web <span style="color:#2ecc71">✔</span>';
+                document.getElementById('startCameraBtn').style.borderColor = '#2ecc71';
+                
             } catch (error) {
-                console.warn("Mạng yếu, tạm dùng giờ điện thoại.");
+                // Nếu sập cả 2 máy chủ (Mất mạng)
+                window.secureTime.isVerified = false;
+                document.getElementById('startCameraBtn').innerHTML = '📸 Cam Web ⚠️';
             }
         }
 
-        // Tự động đồng bộ giờ ngay khi mở App và khi bật Camera
+        // 1. Đồng bộ khi mở App
         window.addEventListener('load', syncNetworkTime);
+        
+        // 2. Chặn gian lận: Cứ mỗi khi nhân viên ẩn App đi (để vào Cài đặt) rồi quay lại, App sẽ tự đồng bộ lại!
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') syncNetworkTime();
+        });
+        
         document.getElementById('startCameraBtn').addEventListener('click', syncNetworkTime);
         document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
-        // ========================================================       
+        // ========================================================
 
         function drawWatermark() {
             if (!img.src) return;
