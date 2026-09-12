@@ -195,7 +195,24 @@
             <span id="mainToggleIcon">▼</span>
         </button>
 
+        <!-- BẢNG ĐIỀU KHIỂN ADMIN: ẨN MẶC ĐỊNH, CHỈ HIỆN KHI NHẬP ĐÚNG PASS -->
+        <div id="adminGodModePanel" style="display: none; background: #2c1616; padding: 15px; border-radius: 8px; border: 1px dashed #e74c3c; margin-bottom: 15px;">
+            <label style="color: #e74c3c; font-size: 14px; font-weight: bold; display: block; margin-bottom: 10px;">
+                ⚡ BẢNG ĐIỀU KHIỂN ADMIN (GOD MODE)
+            </label>
+            
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; color: #aaa;">⏳ Ép Giờ & Ngày (Bỏ trống nếu lấy giờ tự động):</label>
+                <input type="datetime-local" id="adminTimeInput" style="width: 100%; padding: 10px; background: #111; color: white; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box; margin-top: 5px;">
+            </div>
+
+            <div>
+                <label style="font-size: 12px; color: #aaa;">📍 Ép Tọa độ GPS (VD: 20.8390, 105.3329):</label>
+                <input type="text" id="adminGPSInput" placeholder="Nhập tọa độ để ghi đè..." style="width: 100%; padding: 10px; background: #111; color: #f1c40f; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box; margin-top: 5px;">
+            </div>
+        </div>        
         <!-- TOÀN BỘ KHU VỰC KHOANH ĐỎ ĐƯỢC BỌC VÀO ĐÂY (Mặc định ẩn đi) -->
+         
         <div id="mainEditPanel" style="display: none; margin-bottom: 15px;">
             <div class="input-box">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
