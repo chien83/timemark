@@ -508,6 +508,27 @@
             lastUsedMode = mode; 
 
             resetToFreshState();
+            // NĂNG LỰC ADMIN: TỰ ĐỘNG HÚT TỌA ĐỘ GỐC CỦA ẢNH TỪ THƯ VIỆN
+            if (mode === 'library' && typeof exifr !== 'undefined') {
+                exifr.gps(file).then(gps => {
+                    if (gps) {
+                        const extractedGPS = `${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`;
+                        document.getElementById('adminGPSInput').value = extractedGPS;
+                        
+                        // Đổi màu nút Mở Map để báo hiệu đã hút thành công
+                        const btn = document.getElementById('openMapBtn');
+                        const oldText = btn.innerText;
+                        btn.innerText = "✅ Đã hút GPS";
+                        btn.style.background = "#2ecc71";
+                        setTimeout(() => { 
+                            btn.innerText = oldText; 
+                            btn.style.background = "#3498db"; 
+                        }, 3000);
+                        
+                        drawWatermark(); // Vẽ lại ảnh để cập nhật tọa độ gốc ngay lập tức
+                    }
+                }).catch(err => console.log("Ảnh này không có dữ liệu GPS ẩn"));
+            }
             
             // SỬA LỖI XOAY NGANG: Dùng URL.createObjectURL để bảo toàn dữ liệu EXIF xoay ảnh
             const objectUrl = URL.createObjectURL(file);
@@ -1073,6 +1094,16 @@
             // không nén khi lưu ảnh, giữ nguyên chất lượng, ban đầu 0.95
             }, 'image/jpeg', 0.95); 
         });
+
+        // Nút mở nhanh Google Maps cho Admin đi săn tọa độ
+        const openMapBtn = document.getElementById('openMapBtn');
+        if (openMapBtn) {
+            openMapBtn.addEventListener('click', (e) => {
+                e.preventDefault(); // Ngăn nút tải lại trang
+                window.open('https://www.google.com/maps', '_blank');
+            });
+        }
+
     </script>
 </body>
 </html>
