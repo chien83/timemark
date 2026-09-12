@@ -745,35 +745,35 @@
             
             if (locationStr !== "") {
                 ctx.fillText(locationStr, marginX, currentLineY);
-                currentLineY += (baseSize * 0.4); // Đẩy con trỏ vẽ xuống dòng dưới
+                currentLineY += (baseSize * 0.4); // Khoảng cách dòng chuẩn
             }
 
-            // 2. IN TỌA ĐỘ GPS KINH/VĨ ĐỘ (Màu vàng nhạt)
+            // 2. IN TỌA ĐỘ GPS (Màu vàng nhạt)
             if (window.exactGPS && window.exactGPS !== "") {
                 const gpsSize = Math.floor(baseSize * 0.35); 
                 ctx.font = `normal ${gpsSize}px sans-serif`;
                 ctx.fillStyle = '#f1c40f'; 
                 ctx.fillText(`📍 Tọa độ: ${window.exactGPS}`, marginX, currentLineY);
-                currentLineY += (baseSize * 0.45); // Tiếp tục đẩy xuống dòng
+                currentLineY += (baseSize * 0.4); // Thu hẹp khoảng cách dòng
             }
 
-            // 3. IN TÊN TRẠM (Màu xanh dương)
+            // 3. IN TÊN TRẠM (Đã xóa chữ "Trạm:", thu nhỏ size chữ)
             const stationSelectEl = document.getElementById('stationSelect');
             if (stationSelectEl && stationSelectEl.value !== "") {
-                const stationSize = Math.floor(baseSize * 0.45);
+                const stationSize = Math.floor(baseSize * 0.4); // Giảm từ 0.45 xuống 0.4
                 ctx.font = `bold ${stationSize}px sans-serif`;
                 ctx.fillStyle = '#3498db'; 
-                ctx.fillText(`🏢 Trạm: ${stationSelectEl.value}`, marginX, currentLineY);
-                currentLineY += (baseSize * 0.55); // Tiếp tục đẩy xuống dòng
+                ctx.fillText(`🏢 ${stationSelectEl.value}`, marginX, currentLineY);
+                currentLineY += (baseSize * 0.4); // Thu hẹp khoảng cách dòng
             }
 
-            // 4. IN GHI CHÚ THIẾT BỊ (Màu xanh lá)
+            // 4. IN GHI CHÚ THIẾT BỊ (Đã xóa chữ "Cụm/TB:", thu nhỏ size chữ)
             const customText = customTextInput.value.trim();
             if (customText !== "") {
-                const noteSize = Math.floor(baseSize * 0.5);
+                const noteSize = Math.floor(baseSize * 0.45); // Giảm từ 0.5 xuống 0.45
                 ctx.font = `bold ${noteSize}px sans-serif`;
                 ctx.fillStyle = '#2ecc71'; 
-                ctx.fillText(`📝 Cụm/TB: ${customText}`, marginX, currentLineY);
+                ctx.fillText(`📝 ${customText}`, marginX, currentLineY);
             }
 
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
