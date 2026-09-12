@@ -467,6 +467,59 @@
 
         const locationInput = document.getElementById('locationInput');
         const customTextInput = document.getElementById('customTextInput');
+        const saveDeviceBtn = document.getElementById('saveDeviceBtn');
+        const deviceList = document.getElementById('deviceList');
+
+        // 1. THƯ VIỆN CỨNG (Code cố định dùng chung cho toàn bộ nhân viên)
+        // Bạn có thể thêm bớt thiết bị vào giữa 2 dấu ngoặc vuông này tùy ý
+        const hardcodedDevices = [
+            "Máy cắt 271", "Máy cắt 272", "Máy cắt 221", "Máy cắt 222", 
+            "Dao cách ly 271-1", "Dao cách ly 271-7", "Tủ MK", 
+            "Tủ điều khiển bảo vệ", "Biến dòng điện (TI)", 
+            "Biến điện áp (TU)", "Máy biến áp AT1", "Máy biến áp AT2"
+        ];
+
+        function loadDeviceList() {
+            // 2. Tải Thư viện Cá nhân (Những thiết bị do nhân viên tự lưu trên máy của họ)
+            let userDevices = JSON.parse(localStorage.getItem('myCustomDevices')) || [];
+            
+            // 3. Hợp nhất 2 thư viện (Tự động xóa các tên bị trùng lặp)
+            const combinedDevices = [...new Set([...hardcodedDevices, ...userDevices])];
+            
+            // 4. Vẽ danh sách tổng hợp ra màn hình
+            deviceList.innerHTML = '';
+            combinedDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device;
+                deviceList.appendChild(option);
+            });
+        }
+
+        // Chạy hàm tải danh sách ngay khi nhân viên vừa mở Web App
+        loadDeviceList();
+
+        // 5. Xử lý khi nhân viên bấm "Lưu TB" (Chỉ lưu vào máy cá nhân của người đó)
+        saveDeviceBtn.addEventListener('click', () => {
+            const newDevice = customTextInput.value.trim();
+            if (newDevice === "") {
+                alert("Vui lòng gõ tên thiết bị trước khi lưu!");
+                return;
+            }
+
+            let userDevices = JSON.parse(localStorage.getItem('myCustomDevices')) || [];
+            
+            // Kiểm tra xem thiết bị đã tồn tại ở 1 trong 2 thư viện chưa
+            if (hardcodedDevices.includes(newDevice) || userDevices.includes(newDevice)) {
+                alert("Thiết bị này đã có sẵn trong danh sách rồi!");
+            } else {
+                // Thêm vào bộ nhớ của riêng điện thoại đó
+                userDevices.push(newDevice);
+                localStorage.setItem('myCustomDevices', JSON.stringify(userDevices));
+                
+                loadDeviceList(); // Cập nhật lại danh sách xổ xuống ngay lập tức
+                alert(`Đã thêm "${newDevice}" vào thư viện cá nhân của bạn!`);
+            }
+        });        
         const getLocationBtn = document.getElementById('getLocationBtn');
 
         // TÁCH HÀM LẤY VỊ TRÍ ĐỂ CÓ THỂ CHẠY TỰ ĐỘNG NHIỀU LẦN
