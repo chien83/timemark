@@ -199,9 +199,27 @@
                     <button id="getLocationBtn" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; transition: 0.2s;">Tự động lấy vị trí</button>
                 </div>
                 <input type="text" id="locationInput" value="Phú Thọ, P. Hòa Bình" style="margin-bottom: 15px;">
-                
-                <label>📝 Nhập Ghi chú (Mã TB, text...):</label>
-                <input type="text" id="customTextInput" placeholder="VD: MC571/A...">
+                <label>🏢 Chọn Trạm / Khu vực:</label>
+                <select id="stationSelect" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #555; background: #111; color: var(--primary); font-size: 15px; margin-bottom: 15px; font-weight: bold; cursor: pointer;">
+                    <!-- Javascript sẽ tự động điền tên các trạm vào đây -->
+                </select>
+                <label>📝 Chọn hoặc Nhập Ghi chú (Mã TB):</label>
+                <div style="display: flex; gap: 8px;">
+                    <!-- Vùng chứa Input và Nút Mũi tên -->
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" id="customTextInput" placeholder="Gõ tên TB..." style="width: 100%; padding-right: 35px; box-sizing: border-box; margin-bottom: 0;">
+                        <!-- NÚT MŨI TÊN BẠN YÊU CẦU ĐƯỢC CHÈN VÀO ĐÂY -->
+                        <button id="dropdownToggleBtn" style="position: absolute; right: 2px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--primary); font-size: 14px; cursor: pointer; height: 90%; width: 30px; display: flex; align-items: center; justify-content: center;">
+                            ▼
+                        </button>
+                        
+                        <!-- Danh sách thiết bị (Tự thiết kế, mặc định ẩn) -->
+                        <ul id="customDropdownList" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #2a2a2a; border: 1px solid #555; border-radius: 6px; margin: 4px 0 0 0; padding: 0; list-style: none; max-height: 160px; overflow-y: auto; z-index: 999; box-shadow: 0 4px 15px rgba(0,0,0,0.7);">
+                        </ul>
+                    </div>
+                    
+                    <button id="saveDeviceBtn" style="background: var(--primary); color: black; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap;">💾 Lưu TB</button>
+                </div>
             </div>
 
             <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
@@ -288,6 +306,13 @@
         let lastUsedMode = ''; 
         let img = new Image();
 
+        // THÊM MỚI: TẢI LOGO EVNNPT VÀO BỘ NHỚ
+        const evnLogo = new Image();
+        evnLogo.src = './logo_npt.png'; // Đảm bảo tên file khớp 100% với tên bạn đã lưu
+        evnLogo.onload = () => { 
+            // Nếu logo tải xong mà đang có ảnh trên màn hình thì tự động vẽ lại để chèn logo lên
+            if (img.src) drawWatermark(); 
+        };
         // LOGIC ĐÓNG/MỞ BẢNG NÂNG CAO
         const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
         const advancedSettings = document.getElementById('advancedSettings');
@@ -460,7 +485,140 @@
         galleryInput.addEventListener('change', (e) => handleFileUpload(e, 'library'));
 
         const locationInput = document.getElementById('locationInput');
+        const stationSelect = document.getElementById('stationSelect');
         const customTextInput = document.getElementById('customTextInput');
+        const saveDeviceBtn = document.getElementById('saveDeviceBtn');
+        const dropdownToggleBtn = document.getElementById('dropdownToggleBtn');
+        const customDropdownList = document.getElementById('customDropdownList');
+
+        // 1. THƯ VIỆN CỨNG ĐƯỢC PHÂN NHÓM THEO TRẠM (Cấu trúc Từ điển Object)
+        const hardcodedData = {
+            "Trạm 500kV Hòa Bình": [
+                "Máy cắt 221", "Máy cắt 200", "Máy cắt 222", "Máy cắt 341", "Máy cắt 342", "Máy cắt 571", "Máy cắt 572", "Máy cắt 573", "Máy cắt 574", "Máy cắt K504", "Máy cắt KKT504",     
+            ],
+            "Trạm 220kV (Mẫu)": [
+                "Máy cắt 231", "Máy cắt 232", "Dao cách ly 231-1", "Máy biến áp AT2"
+            ],
+            "Khác (Thiết bị chung)": [
+                "Tủ điều khiển bảo vệ", "Rơ le F87", "Bình ắc quy"
+            ]
+        };
+
+        // 2. KHỞI TẠO DANH SÁCH TRẠM VÀO Ô SELECT
+        function initStations() {
+            stationSelect.innerHTML = '';
+            
+            // Lấy danh sách tên trạm từ code cứng
+            const stations = Object.keys(hardcodedData);
+            
+            // Lấy thêm các trạm nếu sau này user có tính năng tự tạo (dự phòng)
+            let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
+            const customStations = Object.keys(userStationData);
+            
+            // Trộn danh sách trạm (xóa trùng lặp)
+            const allStations = [...new Set([...stations, ...customStations])];
+
+            allStations.forEach(station => {
+                const opt = document.createElement('option');
+                opt.value = station;
+                opt.innerText = station;
+                stationSelect.appendChild(opt);
+            });
+
+            // LẮNG NGHE SỰ KIỆN: KHI ĐỔI TRẠM -> TẢI LẠI THIẾT BỊ
+            stationSelect.addEventListener('change', loadDeviceList);
+        }
+
+        // 3. TẢI DANH SÁCH THIẾT BỊ (Dựa theo Trạm đang được chọn trên màn hình)
+        function loadDeviceList() {
+            const currentStation = stationSelect.value;
+            if(!currentStation) return;
+
+            // Lấy thiết bị gốc của trạm đó
+            const hardcodedDevices = hardcodedData[currentStation] || [];
+            
+            // Lấy thiết bị nhân viên tự lưu riêng cho trạm đó
+            let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
+            let userDevices = userStationData[currentStation] || [];
+            
+            const combinedDevices = [...new Set([...hardcodedDevices, ...userDevices])];
+            
+            customDropdownList.innerHTML = ''; 
+            combinedDevices.forEach(device => {
+                const li = document.createElement('li');
+                li.innerText = device;
+                li.style.padding = '12px 15px';
+                li.style.borderBottom = '1px solid #444';
+                li.style.color = 'white';
+                li.style.cursor = 'pointer';
+                li.style.fontSize = '14px';
+                
+                li.addEventListener('mouseover', () => li.style.background = '#444');
+                li.addEventListener('mouseout', () => li.style.background = 'transparent');
+                
+                li.addEventListener('click', () => {
+                    customTextInput.value = device; 
+                    customDropdownList.style.display = 'none'; 
+                    drawWatermark(); 
+                });
+                
+                customDropdownList.appendChild(li);
+            });
+            
+            // Reset ô nhập chữ mỗi khi đổi sang trạm mới để tránh nhầm lẫn
+            customTextInput.value = "";
+            drawWatermark();
+        }
+
+        // 4. BẬT/TẮT DANH SÁCH BẰNG NÚT MŨI TÊN (▼)
+        dropdownToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            customDropdownList.style.display = customDropdownList.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Ẩn danh sách nếu bấm ra khoảng trống ngoài màn hình
+        document.addEventListener('click', (e) => {
+            if (!customTextInput.contains(e.target) && 
+                !dropdownToggleBtn.contains(e.target) && 
+                !customDropdownList.contains(e.target)) {
+                customDropdownList.style.display = 'none';
+            }
+        });
+
+        // 5. XỬ LÝ NÚT "LƯU TB" (Bảo mật: Ghi nhận đúng vào Trạm đang chọn)
+        saveDeviceBtn.addEventListener('click', () => {
+            const newDevice = customTextInput.value.trim();
+            const currentStation = stationSelect.value;
+
+            if (newDevice === "") {
+                alert("Vui lòng gõ tên thiết bị trước khi lưu!");
+                return;
+            }
+
+            let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
+            
+            // Nếu trạm này chưa từng có dữ liệu cá nhân nào, tạo một ngăn tủ (mảng) mới cho nó
+            if (!userStationData[currentStation]) {
+                userStationData[currentStation] = [];
+            }
+
+            const hardcodedDevices = hardcodedData[currentStation] || [];
+            
+            if (hardcodedDevices.includes(newDevice) || userStationData[currentStation].includes(newDevice)) {
+                alert(`Thiết bị này đã có sẵn trong danh sách của ${currentStation}!`);
+            } else {
+                // Nhét thiết bị mới vào đúng "ngăn tủ" của trạm đó
+                userStationData[currentStation].push(newDevice);
+                localStorage.setItem('myCustomStationData', JSON.stringify(userStationData));
+                
+                loadDeviceList(); 
+                alert(`Đã lưu thành công "${newDevice}" vào hồ sơ của ${currentStation}!`);
+            }
+        });
+
+        // 6. KÍCH HOẠT HỆ THỐNG KHI MỞ APP
+        initStations();
+        loadDeviceList();
         const getLocationBtn = document.getElementById('getLocationBtn');
 
         // TÁCH HÀM LẤY VỊ TRÍ ĐỂ CÓ THỂ CHẠY TỰ ĐỘNG NHIỀU LẦN
@@ -472,6 +630,8 @@
                 navigator.geolocation.getCurrentPosition(async function(position) {
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
+                    // THÊM ĐÚNG 1 DÒNG NÀY ĐỂ LƯU TỌA ĐỘ LÀM BẰNG CHỨNG:
+                    window.exactGPS = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
                     
                     try {
                         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=vi`);
@@ -586,18 +746,76 @@
             ctx.fillText(dateStr, dateX, marginY + (baseSize * 0.05));
             ctx.fillText(dayOfWeekStr, dateX, marginY + (baseSize * 0.5));
 
-            // ĐỌC CHỮ ĐỊA CHỈ TỪ Ô NHẬP LIỆU THAY VÌ FIX CỨNG
+            // 1. IN ĐỊA CHỈ (Phường, Tỉnh - Màu trắng mặc định)
             const locationStr = locationInput.value.trim();
-            const locY = marginY + baseSize + (baseSize * 0.2);
+            let currentLineY = marginY + baseSize + (baseSize * 0.2); 
+            
             if (locationStr !== "") {
-                ctx.fillText(locationStr, marginX, locY);
+                ctx.fillText(locationStr, marginX, currentLineY);
+                currentLineY += (baseSize * 0.4); // Khoảng cách dòng chuẩn
             }
 
+            // 2. IN TỌA ĐỘ GPS (Màu vàng nhạt)
+            if (window.exactGPS && window.exactGPS !== "") {
+                const gpsSize = Math.floor(baseSize * 0.35); 
+                ctx.font = `normal ${gpsSize}px sans-serif`;
+                ctx.fillStyle = '#f1c40f'; 
+                ctx.fillText(`📍 Tọa độ: ${window.exactGPS}`, marginX, currentLineY);
+                currentLineY += (baseSize * 0.4); // Thu hẹp khoảng cách dòng
+            }
+
+            // 3. IN TÊN TRẠM (Đã xóa chữ "Trạm:", thu nhỏ size chữ)
+            const stationSelectEl = document.getElementById('stationSelect');
+            if (stationSelectEl && stationSelectEl.value !== "") {
+                const stationSize = Math.floor(baseSize * 0.4); // Giảm từ 0.45 xuống 0.4
+                ctx.font = `bold ${stationSize}px sans-serif`;
+                ctx.fillStyle = '#3498db'; 
+                ctx.fillText(`${stationSelectEl.value}`, marginX, currentLineY);
+                currentLineY += (baseSize * 0.5); // Thu hẹp khoảng cách dòng
+            }
+
+            // 4. IN GHI CHÚ THIẾT BỊ (Highlight kiểu Tem nhãn)
             const customText = customTextInput.value.trim();
             if (customText !== "") {
-                ctx.fillText(customText, marginX, locY + (baseSize * 0.5));
+                const noteSize = Math.floor(baseSize * 0.45);
+                ctx.font = `bold ${noteSize}px sans-serif`;
+                const fullText = `${customText}`; // (Đã bỏ icon tờ giấy theo ý bạn)
+                
+                // Bước 1: Đo chiều dài của dòng chữ để làm hộp vừa vặn
+                const textWidth = ctx.measureText(fullText).width;
+                const padX = baseSize * 0.15; 
+                const padY = baseSize * 0.1;  
+                
+                // Bước 2: Tạm tắt hiệu ứng bóng đổ để khối nền được vuông vức, sắc nét
+                ctx.shadowColor = 'transparent';
+                
+                // Bước 3: Vẽ khối nền Highlight (Màu Xanh lá)
+                ctx.fillStyle = '#2ecc71'; 
+                ctx.fillRect(marginX - padX, currentLineY - padY, textWidth + (padX * 2), noteSize + (padY * 2.5));
+                
+                // Bước 4: In chữ đè lên khối nền (Màu Trắng cho nổi bật)
+                ctx.fillStyle = '#ffffff'; 
+                ctx.fillText(fullText, marginX, currentLineY);
             }
 
+            // ========================================================
+            // 5. IN LOGO EVNNPT (GÓC TRÊN CÙNG BÊN TRÁI)
+            // ========================================================
+            if (evnLogo.complete && evnLogo.width > 0) {
+                const logoTargetWidth = baseSize * 3.5; 
+                const ratio = evnLogo.height / evnLogo.width;
+                const logoTargetHeight = logoTargetWidth * ratio;
+                
+                const logoTopX = marginX; // Căn lề trái bằng lề của khối chữ
+                const logoTopY = canvas.height * 0.04; // Cách viền trên 4%
+                
+                ctx.shadowColor = 'transparent'; 
+                ctx.drawImage(evnLogo, logoTopX, logoTopY, logoTargetWidth, logoTargetHeight);
+            }
+
+            // ========================================================
+            // 6. IN CHỮ TIMEMARK (GÓC DƯỚI CÙNG BÊN PHẢI - GIỮ NGUYÊN)
+            // ========================================================
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
             const lX = canvas.width * (getVal('logoX') / 100);
             const lY = canvas.height * (getVal('logoY') / 100);
@@ -616,7 +834,7 @@
             ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
         }
 
-document.getElementById('downloadBtn').addEventListener('click', function() {
+            document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Đang xử lý...';
