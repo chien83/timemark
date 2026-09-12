@@ -757,6 +757,9 @@
         locationInput.addEventListener('input', drawWatermark);
         customTextInput.addEventListener('input', drawWatermark);
 
+        document.getElementById('adminTimeInput').addEventListener('input', drawWatermark);
+        document.getElementById('adminGPSInput').addEventListener('input', drawWatermark);
+        
         const inputs = ['sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
         inputs.forEach(id => {
             const inputEl = document.getElementById(id);
@@ -835,18 +838,32 @@
             const marginY = canvas.height * (getVal('posY') / 100);
 
             // ==========================================
-            // BƯỚC 2A: PHÂN LOẠI GIỜ CHUẨN & GIỜ MÁY
+            // BƯỚC 2A: QUYỀN ADMIN - THAO TÚNG THỜI GIAN & GPS
             // ==========================================
             let now;
             let timeStatus = ""; 
             
-            if (window.secureTime && window.secureTime.isVerified) {
+            // 1. THAO TÚNG THỜI GIAN
+            const adminTimeInput = document.getElementById('adminTimeInput');
+            if (adminTimeInput && adminTimeInput.value) {
+                // Nếu Admin nhập giờ -> Ép hệ thống dùng giờ giả
+                now = new Date(adminTimeInput.value);
+                timeStatus = " [✔ Chuẩn QT]"; // Làm giả luôn con dấu Quốc tế để che mắt!
+            } else if (window.secureTime && window.secureTime.isVerified) {
+                // Chế độ bình thường
                 const elapsed = performance.now() - window.secureTime.performanceMark;
                 now = new Date(window.secureTime.serverTimestamp + elapsed);
                 timeStatus = " [✔ Chuẩn QT]"; 
             } else {
                 now = new Date(); 
                 timeStatus = " [⚠️ Giờ Máy]"; 
+            }
+
+            // 2. THAO TÚNG GPS
+            const adminGPSInput = document.getElementById('adminGPSInput');
+            if (adminGPSInput && adminGPSInput.value.trim() !== "") {
+                // Ép luôn biến GPS toàn cầu thành tọa độ của Admin
+                window.exactGPS = adminGPSInput.value.trim(); 
             }
 
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
