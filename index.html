@@ -740,7 +740,54 @@
                 });
             }
         });
+        // ========================================================
+        // TÍNH NĂNG ANTI-FRAUD: ĐỒNG BỘ GIỜ QUỐC TẾ (BẢN VĨNH CỬU)
+        // ========================================================
+        window.secureTime = { serverTimestamp: null, performanceMark: null, isVerified: false };
 
+        async function syncNetworkTime() {
+            try {
+                let serverTimeStr;
+                try {
+                    // Ưu tiên 1: Máy chủ TimeAPI siêu tốc
+                    const res1 = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');
+                    if (!res1.ok) throw new Error();
+                    const data1 = await res1.json();
+                    serverTimeStr = data1.dateTime;
+                } catch (e) {
+                    // Dự phòng 2: Máy chủ WorldTime
+                    const res2 = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+                    const data2 = await res2.json();
+                    serverTimeStr = data2.datetime;
+                }
+                
+                // Lưu lại mốc giờ chuẩn và thời gian phần cứng
+                window.secureTime.serverTimestamp = new Date(serverTimeStr).getTime();
+                window.secureTime.performanceMark = performance.now();
+                window.secureTime.isVerified = true;
+                
+                // Hiệu ứng đổi màu nút Cam Web để báo hiệu thành công
+                const camBtn = document.getElementById('startCameraBtn');
+                if(camBtn) {
+                    camBtn.innerHTML = '📸 Cam Web <span style="color:#2ecc71">✔</span>';
+                    camBtn.style.borderColor = '#2ecc71';
+                }
+            } catch (error) {
+                // Nếu sập cả 2 máy chủ (Mất mạng)
+                window.secureTime.isVerified = false;
+                const camBtn = document.getElementById('startCameraBtn');
+                if(camBtn) camBtn.innerHTML = '📸 Cam Web ⚠️';
+            }
+        }
+
+        // Kích hoạt đồng bộ giờ tự động
+        window.addEventListener('load', syncNetworkTime);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') syncNetworkTime();
+        });
+        document.getElementById('startCameraBtn').addEventListener('click', syncNetworkTime);
+        document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
+        // ========================================================
         function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
