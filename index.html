@@ -850,62 +850,43 @@
             }
 
             // ========================================================
-            // 6. IN CHỮ TIMEMARK (GÓC DƯỚI CÙNG BÊN PHẢI - GIỮ NGUYÊN)
-            // ========================================================
-            const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
-            const lX = canvas.width * (getVal('logoX') / 100);
-            const lY = canvas.height * (getVal('logoY') / 100);
-
-            ctx.font = `bold ${logoBaseSize}px sans-serif`;
-            ctx.fillStyle = '#FFC107'; 
-            ctx.fillText("Time", lX, lY);
-            
-            const timeLogoWidth = ctx.measureText("Time").width;
-            ctx.fillStyle = 'white';
-            ctx.fillText("mark", lX + timeLogoWidth, lY);
-
-            const subTextSize = Math.floor(logoBaseSize * 0.65);
-            ctx.font = `normal ${subTextSize}px sans-serif`;
-            ctx.fillStyle = '#E0E0E0';
-            ctx.fillText("100% Chân thực", lX, lY + logoBaseSize + (baseSize * 0.1));
-            // ========================================================
-            // 7. IN MÃ QR BẢN ĐỒ GOOGLE MAPS (GÓC TRÊN CÙNG BÊN PHẢI)
+            // 6. IN MÃ QR BẢN ĐỒ (GÓC DƯỚI CÙNG BÊN PHẢI - THAY THẾ CHỮ TIMEMARK)
             // ========================================================
             if (window.exactGPS && window.exactGPS !== "") {
-                // Xóa dấu cách trong tọa độ để tạo Link Google Maps chuẩn
                 const gpsForLink = window.exactGPS.replace(/\s/g, '');
                 const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
                 
-                // Dùng QRious tạo mã QR ẩn trong bộ nhớ
                 const qr = new QRious({
                     value: mapsUrl,
-                    size: 300, // Kích thước xuất ra nét căng
+                    size: 300, 
                     background: 'white',
                     foreground: 'black',
-                    level: 'M' // Độ sửa lỗi trung bình
+                    level: 'M'
                 });
 
-                // Tính toán vị trí: Góc trên cùng bên PHẢI
-                const qrSize = baseSize * 3.2; // Độ lớn của mã QR
-                const qrTopX = canvas.width - marginX - qrSize;
-                const qrTopY = canvas.height * 0.04; // Cách lề trên 4% (Bằng hàng với Logo EVN)
+                // Thu nhỏ kích thước đi một nửa (giảm từ 3.2 xuống 1.5)
+                const qrSize = baseSize * 1.5; 
+                
+                // Tính toán tọa độ: Ép sát lề phải và lề dưới cho cân bằng với cụm chữ bên trái
+                const qrX = canvas.width - marginX - qrSize;
+                const qrY = canvas.height - marginY - qrSize - (baseSize * 0.4); // Trừ hao chỗ cho dòng chữ chú thích
 
-                // Vẽ một lớp viền trắng mỏng lót dưới QR cho đẹp và dễ quét
+                // Vẽ viền trắng lót nền
                 ctx.shadowColor = 'transparent';
                 ctx.fillStyle = 'white';
-                ctx.fillRect(qrTopX - 4, qrTopY - 4, qrSize + 8, qrSize + 8);
+                ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
 
-                // In hình ảnh QR lên khung canvas
-                ctx.drawImage(qr.canvas, qrTopX, qrTopY, qrSize, qrSize);
+                // Vẽ QR
+                ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
                 
-                // In thêm dòng chữ nhỏ "Quét mở Bản đồ" ngay dưới mã QR
-                const hintSize = Math.floor(baseSize * 0.3);
+                // In dòng chữ chú thích ngay dưới QR
+                const hintSize = Math.floor(baseSize * 0.28);
                 ctx.font = `bold ${hintSize}px sans-serif`;
                 ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'center'; // Căn giữa chữ so với QR
-                ctx.fillText("Quét mở Bản đồ", qrTopX + (qrSize / 2), qrTopY + qrSize + (baseSize * 0.2));
+                ctx.textAlign = 'center'; // Căn giữa chữ theo hình vuông QR
+                ctx.fillText("Quét mở Bản đồ", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
                 
-                // Reset lại căn lề trái để không ảnh hưởng các thao tác vẽ khác
+                // Trả lại định dạng căn trái mặc định để không lỗi các hàm khác
                 ctx.textAlign = 'left'; 
             }
 
