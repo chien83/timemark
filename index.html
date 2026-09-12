@@ -957,7 +957,7 @@
         }
 
 
-            document.getElementById('downloadBtn').addEventListener('click', function() {
+        document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Đang xử lý...';
@@ -972,7 +972,7 @@
                 const fileName = `Timemark_Studio_${new Date().getTime()}.jpg`;
                 const file = new File([blob], fileName, { type: 'image/jpeg' });
 
-                // HÀM RESET GIAO DIỆN (Được gom lại để gọi dễ dàng)
+                // HÀM RESET GIAO DIỆN
                 const finishAndReset = () => {
                     btn.innerHTML = '✅ Đã hoàn tất!';
                     btn.style.backgroundColor = '#2980b9'; 
@@ -981,54 +981,62 @@
                         btn.innerHTML = originalText;
                         btn.style.backgroundColor = ''; 
                         
-                        resetToFreshState(); // Dọn dẹp khung làm việc
-                        bottomMenu.style.display = 'block'; // Hiện lại menu đáy
-                        
-                        // Xóa chữ ghi chú, giữ lại địa chỉ
+                        resetToFreshState(); 
+                        bottomMenu.style.display = 'block'; 
                         document.getElementById('customTextInput').value = '';
 
-                        // TỰ ĐỘNG BẬT LẠI CAMERA NẾU VỪA DÙNG
                         if (lastUsedMode === 'webcam') {
-                            startCameraBtn.click(); // Giả lập lệnh click để bật cam web
+                            startCameraBtn.click(); 
                         }
                     }, 1500);
                 };
 
-                // KIỂM TRA THIẾT BỊ LÀ IOS HAY ANDROID
+                // KIỂM TRA THIẾT BỊ
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
                 try {
-                    // Nếu là iOS (iPhone/iPad) HOẶC trình duyệt đang chạy là Safari -> Bắt buộc dùng Web Share API
-                    if ((isIOS || isSafari) && navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Timemark Image'
-                        });
-                        finishAndReset(); // Chạy reset khi Share xong
+                    if (isIOS || isSafari) {
+                        // ==========================================
+                        // CHO IOS: Bắt buộc dùng Share vì iOS không cho tải ngầm
+                        // ==========================================
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({ files: [file], title: 'Timemark Image' });
+                        }
+                        finishAndReset(); 
                     } 
-                    // Nếu là Android hoặc PC -> Ưu tiên lưu thẳng (Direct Download)
                     else {
+                        // ==========================================
+                        // CHO ANDROID / PC: COMBO 2 TRONG 1
+                        // ==========================================
+                        // Hành động 1: Ép tải thẳng vào thư mục Download của máy
                         const url = window.URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
                         link.download = fileName;
-                        
-                        // Bắt buộc gắn link vào body (chuẩn HTML5)
                         document.body.appendChild(link);
                         link.click();
-                        
-                        // Dọn dẹp RAM
                         document.body.removeChild(link);
                         window.URL.revokeObjectURL(url);
                         
-                        finishAndReset(); // Chạy reset khi Tải xong
+                        // Hành động 2: Kích hoạt lập tức bảng Share để gửi Zalo
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            try {
+                                await navigator.share({
+                                    files: [file],
+                                    title: 'Báo cáo Timemark'
+                                });
+                            } catch (shareErr) {
+                                // Nếu người dùng bấm dấu X tắt bảng share thì bỏ qua, vì ảnh đã tải về máy rồi
+                            }
+                        }
+                        
+                        // Chạy reset sau khi hoàn thành combo
+                        finishAndReset(); 
                     }
                 } catch (error) {
-                    // Xử lý khi người dùng ấn Hủy Share
                     btn.innerHTML = originalText;
                 }
-            // không nén khi lưu ảnh, giữ nguyên chất lượng, ban đầu 0.95
             }, 'image/jpeg', 0.95); 
         });
     </script>
