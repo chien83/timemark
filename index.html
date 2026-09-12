@@ -788,7 +788,7 @@
         document.getElementById('startCameraBtn').addEventListener('click', syncNetworkTime);
         document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
         // ========================================================
-        function drawWatermark() {
+function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -806,7 +806,21 @@
             const marginX = canvas.width * (getVal('posX') / 100);
             const marginY = canvas.height * (getVal('posY') / 100);
 
-            const now = new Date();
+            // ==========================================
+            // BƯỚC 2A: PHÂN LOẠI GIỜ CHUẨN & GIỜ MÁY
+            // ==========================================
+            let now;
+            let timeStatus = ""; 
+            
+            if (window.secureTime && window.secureTime.isVerified) {
+                const elapsed = performance.now() - window.secureTime.performanceMark;
+                now = new Date(window.secureTime.serverTimestamp + elapsed);
+                timeStatus = " [✔ Chuẩn QT]"; 
+            } else {
+                now = new Date(); 
+                timeStatus = " [⚠️ Giờ Máy]"; 
+            }
+
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const dateStr = `${now.getDate()} Tháng ${now.getMonth() + 1}, ${now.getFullYear()}`;
             const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -831,117 +845,105 @@
             ctx.fillText(dateStr, dateX, marginY + (baseSize * 0.05));
             ctx.fillText(dayOfWeekStr, dateX, marginY + (baseSize * 0.5));
 
-            // 1. IN ĐỊA CHỈ (Phường, Tỉnh - Màu trắng mặc định)
+            // 1. IN ĐỊA CHỈ
             const locationStr = locationInput.value.trim();
             let currentLineY = marginY + baseSize + (baseSize * 0.2); 
-            
             if (locationStr !== "") {
                 ctx.fillText(locationStr, marginX, currentLineY);
-                currentLineY += (baseSize * 0.4); // Khoảng cách dòng chuẩn
+                currentLineY += (baseSize * 0.4); 
             }
 
-            // 2. IN TỌA ĐỘ GPS (Màu vàng nhạt)
+            // 2. IN TỌA ĐỘ GPS
             if (window.exactGPS && window.exactGPS !== "") {
                 const gpsSize = Math.floor(baseSize * 0.35); 
                 ctx.font = `normal ${gpsSize}px sans-serif`;
                 ctx.fillStyle = '#f1c40f'; 
                 ctx.fillText(`📍 Tọa độ: ${window.exactGPS}`, marginX, currentLineY);
-                currentLineY += (baseSize * 0.4); // Thu hẹp khoảng cách dòng
+                currentLineY += (baseSize * 0.4); 
             }
 
-            // 3. IN TÊN TRẠM (Đã xóa chữ "Trạm:", thu nhỏ size chữ)
+            // 3. IN TÊN TRẠM
             const stationSelectEl = document.getElementById('stationSelect');
             if (stationSelectEl && stationSelectEl.value !== "") {
-                const stationSize = Math.floor(baseSize * 0.4); // Giảm từ 0.45 xuống 0.4
+                const stationSize = Math.floor(baseSize * 0.4); 
                 ctx.font = `bold ${stationSize}px sans-serif`;
                 ctx.fillStyle = '#3498db'; 
                 ctx.fillText(`${stationSelectEl.value}`, marginX, currentLineY);
-                currentLineY += (baseSize * 0.5); // Thu hẹp khoảng cách dòng
+                currentLineY += (baseSize * 0.5); 
             }
 
-            // 4. IN GHI CHÚ THIẾT BỊ (Highlight kiểu Tem nhãn)
+            // 4. IN GHI CHÚ THIẾT BỊ
             const customText = customTextInput.value.trim();
             if (customText !== "") {
                 const noteSize = Math.floor(baseSize * 0.45);
                 ctx.font = `bold ${noteSize}px sans-serif`;
-                const fullText = `${customText}`; // (Đã bỏ icon tờ giấy theo ý bạn)
+                const fullText = `${customText}`; 
                 
-                // Bước 1: Đo chiều dài của dòng chữ để làm hộp vừa vặn
                 const textWidth = ctx.measureText(fullText).width;
                 const padX = baseSize * 0.15; 
                 const padY = baseSize * 0.1;  
                 
-                // Bước 2: Tạm tắt hiệu ứng bóng đổ để khối nền được vuông vức, sắc nét
                 ctx.shadowColor = 'transparent';
-                
-                // Bước 3: Vẽ khối nền Highlight (Màu Xanh lá)
                 ctx.fillStyle = '#2ecc71'; 
                 ctx.fillRect(marginX - padX, currentLineY - padY, textWidth + (padX * 2), noteSize + (padY * 2.5));
                 
-                // Bước 4: In chữ đè lên khối nền (Màu Trắng cho nổi bật)
                 ctx.fillStyle = '#ffffff'; 
                 ctx.fillText(fullText, marginX, currentLineY);
             }
 
-            // ========================================================
-            // 5. IN LOGO EVNNPT (GÓC TRÊN CÙNG BÊN TRÁI)
-            // ========================================================
+            // 5. IN LOGO EVNNPT
             if (evnLogo.complete && evnLogo.width > 0) {
                 const logoTargetWidth = baseSize * 3.5; 
                 const ratio = evnLogo.height / evnLogo.width;
                 const logoTargetHeight = logoTargetWidth * ratio;
-                
-                const logoTopX = marginX; // Căn lề trái bằng lề của khối chữ
-                const logoTopY = canvas.height * 0.04; // Cách viền trên 4%
+                const logoTopX = marginX; 
+                const logoTopY = canvas.height * 0.04; 
                 
                 ctx.shadowColor = 'transparent'; 
                 ctx.drawImage(evnLogo, logoTopX, logoTopY, logoTargetWidth, logoTargetHeight);
             }
 
             // ========================================================
-            // 6. IN MÃ QR (BẰNG CHỨNG GỐC + LINK MAPS BẤM TRỰC TIẾP)
+            // 6. IN MÃ QR (CHỐNG GIAN LẬN + CHỐNG LỖI MẤT GPS CỦA PWA IOS)
             // ========================================================
+            let mapsUrl = "Chưa cấp quyền GPS hoặc mất tín hiệu";
             if (window.exactGPS && window.exactGPS !== "") {
-                const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
-                const deviceName = customTextInput.value.trim() || "Chưa nhập";
-                
-                // Xóa dấu cách trong tọa độ để link không bị đứt đoạn khi gửi qua Zalo
                 const gpsForLink = window.exactGPS.replace(/\s/g, '');
-                const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
-                
-                // Gom thông tin, thay dòng "Tọa độ" thành đường link Maps trực tiếp
-                const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}\n- Vị trí: ${mapsUrl}`;
-                
-                // Ép chuẩn mã hóa UTF-8
-                const utf8Payload = unescape(encodeURIComponent(securityPayload));
-
-                const qr = new QRious({
-                    value: utf8Payload, 
-                    size: 300, 
-                    background: 'white',
-                    foreground: 'black',
-                    level: 'M'
-                });
-
-                const qrSize = baseSize * 1.5; 
-                const getVal = (id) => document.getElementById(id).value;
-                const qrX = canvas.width * (getVal('logoX') / 100);
-                const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
-
-                ctx.shadowColor = 'transparent';
-                ctx.fillStyle = 'white';
-                ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
-                ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
-                
-                const hintSize = Math.floor(baseSize * 0.28);
-                ctx.font = `bold ${hintSize}px sans-serif`;
-                ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'center'; 
-                ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
-                ctx.textAlign = 'left'; 
+                mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
             }
 
+            const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
+            const deviceName = customTextInput.value.trim() || "Chưa nhập";
+            
+            const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}${timeStatus}\n- Vị trí: ${mapsUrl}`;
+            
+            const utf8Payload = unescape(encodeURIComponent(securityPayload));
+
+            const qr = new QRious({
+                value: utf8Payload, 
+                size: 300, 
+                background: 'white',
+                foreground: 'black',
+                level: 'M'
+            });
+
+            const qrSize = baseSize * 1.5; 
+            const qrX = canvas.width * (getVal('logoX') / 100);
+            const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
+
+            ctx.shadowColor = 'transparent';
+            ctx.fillStyle = 'white';
+            ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
+            ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
+            
+            const hintSize = Math.floor(baseSize * 0.28);
+            ctx.font = `bold ${hintSize}px sans-serif`;
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center'; 
+            ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
+            ctx.textAlign = 'left'; 
         }
+
 
             document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
