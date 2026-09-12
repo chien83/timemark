@@ -306,6 +306,13 @@
         let lastUsedMode = ''; 
         let img = new Image();
 
+        // THÊM MỚI: TẢI LOGO EVNNPT VÀO BỘ NHỚ
+        const evnLogo = new Image();
+        evnLogo.src = './logo_evn.png'; // Đảm bảo tên file khớp 100% với tên bạn đã lưu
+        evnLogo.onload = () => { 
+            // Nếu logo tải xong mà đang có ảnh trên màn hình thì tự động vẽ lại để chèn logo lên
+            if (img.src) drawWatermark(); 
+        };
         // LOGIC ĐÓNG/MỞ BẢNG NÂNG CAO
         const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
         const advancedSettings = document.getElementById('advancedSettings');
@@ -772,12 +779,12 @@
             if (customText !== "") {
                 const noteSize = Math.floor(baseSize * 0.45);
                 ctx.font = `bold ${noteSize}px sans-serif`;
-                const fullText = `${customText}`;
+                const fullText = `${customText}`; // (Đã bỏ icon tờ giấy theo ý bạn)
                 
                 // Bước 1: Đo chiều dài của dòng chữ để làm hộp vừa vặn
                 const textWidth = ctx.measureText(fullText).width;
-                const padX = baseSize * 0.15; // Khoảng cách lề trái/phải của hộp
-                const padY = baseSize * 0.1;  // Khoảng cách lề trên/dưới của hộp
+                const padX = baseSize * 0.15; 
+                const padY = baseSize * 0.1;  
                 
                 // Bước 2: Tạm tắt hiệu ứng bóng đổ để khối nền được vuông vức, sắc nét
                 ctx.shadowColor = 'transparent';
@@ -791,6 +798,24 @@
                 ctx.fillText(fullText, marginX, currentLineY);
             }
 
+            // ========================================================
+            // 5. IN LOGO EVNNPT (GÓC TRÊN CÙNG BÊN TRÁI)
+            // ========================================================
+            if (evnLogo.complete && evnLogo.width > 0) {
+                const logoTargetWidth = baseSize * 3.5; 
+                const ratio = evnLogo.height / evnLogo.width;
+                const logoTargetHeight = logoTargetWidth * ratio;
+                
+                const logoTopX = marginX; // Căn lề trái bằng lề của khối chữ
+                const logoTopY = canvas.height * 0.04; // Cách viền trên 4%
+                
+                ctx.shadowColor = 'transparent'; 
+                ctx.drawImage(evnLogo, logoTopX, logoTopY, logoTargetWidth, logoTargetHeight);
+            }
+
+            // ========================================================
+            // 6. IN CHỮ TIMEMARK (GÓC DƯỚI CÙNG BÊN PHẢI - GIỮ NGUYÊN)
+            // ========================================================
             const logoBaseSize = Math.floor(shortEdge * (getVal('sizeLogo') / 100)); 
             const lX = canvas.width * (getVal('logoX') / 100);
             const lY = canvas.height * (getVal('logoY') / 100);
