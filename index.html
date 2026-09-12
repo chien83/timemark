@@ -849,34 +849,21 @@
                 ctx.drawImage(evnLogo, logoTopX, logoTopY, logoTargetWidth, logoTargetHeight);
             }
 
-            // ========================================================
-            // 6. IN MÃ QR BẢN ĐỒ VÀ CHỮ KÝ SỐ CHỐNG CẮT GHÉP (GIẢI PHÁP SIÊU LIÊN KẾT)
+// ========================================================
+            // 6. IN MÃ QR (ƯU TIÊN HIỂN THỊ VĂN BẢN CHỐNG GIAN LẬN)
             // ========================================================
             if (window.exactGPS && window.exactGPS !== "") {
-                const gpsForLink = window.exactGPS.replace(/\s/g, '');
+                const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
+                const deviceName = customTextInput.value.trim() || "Chưa nhập";
                 
-                // Thu thập thông tin 
-                const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Khong_ro";
-                const deviceName = customTextInput.value.trim() || "Chua_nhap";
+                // Gom thông tin thành văn bản ĐỌC DỄ DÀNG
+                const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}\n- Tọa độ: ${window.exactGPS}\n(Copy tọa độ dán vào thanh tìm kiếm Google Maps để xem)`;
                 
-                // Hàm thông minh: Đổi Tiếng Việt có dấu thành không dấu, thay dấu cách bằng gạch dưới '_'
-                const makeSafe = (str) => {
-                    let s = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
-                    s = s.replace(/[^a-zA-Z0-9]/g, '_'); // Ký tự lạ biến thành gạch dưới
-                    s = s.replace(/_+/g, '_'); // Xóa các gạch dưới thừa
-                    return s;
-                };
+                // Ép mã hóa chuẩn để quét trên Zalo không bị lỗi chữ
+                const utf8Payload = unescape(encodeURIComponent(securityPayload));
 
-                // Dọn dẹp dữ liệu để sẵn sàng nhét vào Link
-                const safeStation = makeSafe(stationName);
-                const safeDevice = makeSafe(deviceName);
-                const safeTime = makeSafe(`${timeStr}_${dateStr}`);
-
-                // GỘP TẤT CẢ VÀO 1 ĐƯỜNG LINK DUY NHẤT (Zalo sẽ tự động cho phép bấm)
-                const mapsUrl = `https://maps.google.com/?q=${gpsForLink}&Tram=${safeStation}&TB=${safeDevice}&Luc=${safeTime}`;
-                
                 const qr = new QRious({
-                    value: mapsUrl, // Chỉ truyền duy nhất Link này vào QR
+                    value: utf8Payload, 
                     size: 300, 
                     background: 'white',
                     foreground: 'black',
@@ -884,7 +871,6 @@
                 });
 
                 const qrSize = baseSize * 1.5; 
-                
                 const getVal = (id) => document.getElementById(id).value;
                 const qrX = canvas.width * (getVal('logoX') / 100);
                 const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
@@ -894,11 +880,12 @@
                 ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
                 ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
                 
+                // Đổi chữ chú thích để phù hợp với chức năng mới
                 const hintSize = Math.floor(baseSize * 0.28);
                 ctx.font = `bold ${hintSize}px sans-serif`;
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center'; 
-                ctx.fillText("Quét mở Bản đồ", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
+                ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
                 ctx.textAlign = 'left'; 
             }
 
