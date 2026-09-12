@@ -850,16 +850,20 @@
             }
 
             // ========================================================
-            // 6. IN MÃ QR (ƯU TIÊN HIỂN THỊ VĂN BẢN CHỐNG GIAN LẬN)
+            // 6. IN MÃ QR (BẰNG CHỨNG GỐC + LINK MAPS BẤM TRỰC TIẾP)
             // ========================================================
             if (window.exactGPS && window.exactGPS !== "") {
                 const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
                 const deviceName = customTextInput.value.trim() || "Chưa nhập";
                 
-                // Gom thông tin thành văn bản ĐỌC DỄ DÀNG
-                const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}\n- Tọa độ: ${window.exactGPS}\n(Copy tọa độ dán vào thanh tìm kiếm Google Maps để xem)`;
+                // Xóa dấu cách trong tọa độ để link không bị đứt đoạn khi gửi qua Zalo
+                const gpsForLink = window.exactGPS.replace(/\s/g, '');
+                const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
                 
-                // Ép mã hóa chuẩn để quét trên Zalo không bị lỗi chữ
+                // Gom thông tin, thay dòng "Tọa độ" thành đường link Maps trực tiếp
+                const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}\n- Vị trí: ${mapsUrl}`;
+                
+                // Ép chuẩn mã hóa UTF-8
                 const utf8Payload = unescape(encodeURIComponent(securityPayload));
 
                 const qr = new QRious({
@@ -880,7 +884,6 @@
                 ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
                 ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
                 
-                // Đổi chữ chú thích để phù hợp với chức năng mới
                 const hintSize = Math.floor(baseSize * 0.28);
                 ctx.font = `bold ${hintSize}px sans-serif`;
                 ctx.fillStyle = '#ffffff';
