@@ -178,7 +178,7 @@
     <div id="homeDashboard" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #2c3e50 0%, #000000 80%); z-index: 5;">
         
         <!-- Logo và Tiêu đề -->
-        <img src="./logo_npt.png" alt="EVNNPT" style="width: 100px; opacity: 0.9; margin-bottom: 15px;">
+        <img src="./logo_npt.png" alt="EVNNPT" style="width: 200px; opacity: 1; margin-bottom: 25px;">
         <h2 style="color: #ecf0f1; margin-bottom: 5px; font-family: sans-serif; letter-spacing: 1px;">TIMEMARK STUDIO</h2>
         <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 25px;">Hệ thống Đóng dấu Dữ liệu Khép kín</p>
 
@@ -373,8 +373,17 @@
             // ==========================================
             // KHỞI ĐỘNG: DASHBOARD TRANG CHỦ & KIỂM TRA GPS
             // ==========================================
+// ==========================================
+            // KHỞI ĐỘNG: DASHBOARD TRANG CHỦ & KIỂM TRA GPS
+            // ==========================================
             window.addEventListener('load', () => {
                 const dashGps = document.getElementById('dashGpsStatus');
+                
+                // 1. Kéo thanh menu chứa 2 nút Cam nổi lên trên cùng màn hình nền đen
+                const btmMenu = document.getElementById('bottomMenu');
+                if(btmMenu) btmMenu.style.zIndex = '10';
+
+                // 2. Kiểm tra GPS
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
@@ -386,11 +395,13 @@
                         },
                         (error) => {
                             if (dashGps) {
-                                dashGps.innerHTML = `❌ Chưa bật định vị`;
+                                dashGps.innerHTML = `❌ Hãy bật GPS & Tải lại`;
                                 dashGps.style.color = "#e74c3c";
                             }
+                            // Bật hộp thoại cảnh báo đanh thép nếu quên bật GPS
+                            alert("⚠️ CẢNH BÁO BẢO MẬT:\n\nKhông tìm thấy tín hiệu định vị! Vui lòng vuốt màn hình xuống, BẬT ĐỊNH VỊ (GPS) và TẢI LẠI TRANG để hệ thống hoạt động chính xác.");
                         },
-                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                     );
                 } else {
                     if (dashGps) dashGps.innerHTML = "⚠️ Không hỗ trợ GPS";
