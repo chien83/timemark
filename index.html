@@ -1135,6 +1135,63 @@
             ctx.textAlign = 'left'; 
         }
 
+        // ========================================================
+        // HỆ THỐNG TRẠM TRUNG CHUYỂN OFFLINE (SỬ DỤNG INDEXEDDB)
+        // ========================================================
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynmSb_cktvwmeeYi8uDbe8RdAueA0FYan0P5ppPAxvA3dDMOylNezp-zUO1P_lcxyb/exec';
+        let offlineDB;
+        const requestDB = indexedDB.open("NptSmartCamDB", 1);
+        
+        requestDB.onupgradeneeded = (e) => {
+            offlineDB = e.target.result;
+            // Tạo một "nhà kho" tên là pendingUploads để chứa ảnh chưa gửi được
+            if (!offlineDB.objectStoreNames.contains("pendingUploads")) {
+                offlineDB.createObjectStore("pendingUploads", { keyPath: "id" });
+            }
+        };
+        
+        requestDB.onsuccess = (e) => {
+            offlineDB = e.target.result;
+            syncOfflineQueue(); // Vừa mở app lên là kiểm tra kho xem có ảnh tồn không
+        };
+
+        // Hàm nhét ảnh vào kho khi mất mạng hoặc mạng lỗi
+        function saveToOfflineQueue(payload) {
+            if (!offlineDB) return;
+            const tx = offlineDB.transaction("pendingUploads", "readwrite");
+            tx.objectStore("pendingUploads").put({ id: Date.now(), payload: payload });
+            console.log("Đã lưu tạm 1 ảnh vào kho Offline.");
+        }
+
+        // Hàm dọn kho (Tự động gửi ảnh đi khi có mạng)
+        function syncOfflineQueue() {
+            if (!navigator.onLine || !offlineDB) return;
+            
+            const tx = offlineDB.transaction("pendingUploads", "readonly");
+            const store = tx.objectStore("pendingUploads");
+            const req = store.getAll();
+            
+            req.onsuccess = () => {
+                const items = req.result;
+                if(items.length > 0) console.log(`Phát hiện mạng! Đang đồng bộ ${items.length} ảnh tồn đọng...`);
+                
+                items.forEach(item => {
+                    fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(item.payload)
+                    }).then(res => res.text()).then(() => {
+                        // Gửi xong thì xóa file đó khỏi kho để giải phóng bộ nhớ điện thoại
+                        offlineDB.transaction("pendingUploads", "readwrite").objectStore("pendingUploads").delete(item.id);
+                        console.log("Đã đồng bộ bù thành công:", item.payload.fileName);
+                    }).catch(err => console.log("Lỗi khi đồng bộ bù:", err));
+                });
+            };
+        }
+
+        // ⚡ LẮNG NGHE SỰ KIỆN: Bất cứ khi nào điện thoại báo có mạng -> Lập tức chạy hàm dọn kho
+        window.addEventListener('online', syncOfflineQueue);
+        // ========================================================
 
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
