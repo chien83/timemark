@@ -1108,7 +1108,8 @@
                 mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
             }
 
-            const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
+            const stationSelectForQR = document.getElementById('stationSelect');
+            const stationName = (stationSelectForQR && stationSelectForQR.value !== "none") ? stationSelectForQR.value : "Ảnh thường";
             const deviceName = customTextInput.value.trim() || "Chưa nhập";
             
             const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}${timeStatus}\n- Vị trí: ${mapsUrl}`;
