@@ -1211,7 +1211,8 @@
                     return;
                 }
                 
-                const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : 'Studio';
+                let stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : 'Studio';
+                if (stationName === "none") stationName = "AnhThuong"; // Tránh bị lỗi tên file
                 const fileName = `Timemark_${stationName}_${new Date().getTime()}.jpg`;
                 const file = new File([blob], fileName, { type: 'image/jpeg' });
 
