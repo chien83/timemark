@@ -1165,12 +1165,16 @@
                     
                     fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
+                        // BỔ SUNG DÒNG HEADERS NÀY ĐỂ VƯỢT QUA TƯỜNG LỬA CỦA GOOGLE
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8',
+                        },
                         body: JSON.stringify({
                             fileName: fileName,
                             mimeType: 'image/jpeg',
                             base64: base64Data
                         })
-                    }).then(res => res.json())
+                    }).then(res => res.text()) // Sửa thành text() vì Google hay redirect
                       .then(data => console.log('Đã đẩy thành công lên Cloud:', data))
                       .catch(err => console.log('Lỗi đẩy Cloud:', err));
                 }
