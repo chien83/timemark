@@ -794,6 +794,12 @@
             const newDevice = customTextInput.value.trim();
             const currentStation = stationSelect.value;
 
+            // THÊM LỚP CHẶN: Không cho phép lưu thiết bị nếu đang chọn "Không hiển thị Trạm"
+            if (currentStation === "none") {
+                alert("❌ Vui lòng chọn một Trạm cụ thể trước khi bấm Lưu Thiết Bị!");
+                return;
+            }
+
             if (newDevice === "") {
                 alert("Vui lòng gõ tên thiết bị trước khi lưu!");
                 return;
