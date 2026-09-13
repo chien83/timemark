@@ -1136,7 +1136,7 @@
         }
 
 
-            document.getElementById('downloadBtn').addEventListener('click', function() {
+        document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Đang xử lý...';
@@ -1148,13 +1148,39 @@
                     return;
                 }
                 
-                const fileName = `Timemark_Studio_${new Date().getTime()}.jpg`;
+                // Cải tiến 1: Tên file sẽ tự động kẹp thêm tên Trạm đang chọn cho dễ tìm trên Drive
+                const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : 'Studio';
+                const fileName = `Timemark_${stationName}_${new Date().getTime()}.jpg`;
                 const file = new File([blob], fileName, { type: 'image/jpeg' });
 
-                // HÀM RESET GIAO DIỆN (Được gom lại để gọi dễ dàng)
+                // ==========================================
+                // BẢN NÂNG CẤP: ÂM THẦM ĐẨY LÊN GOOGLE DRIVE
+                // ==========================================
+                if (navigator.onLine) {
+                    // Chuyển ảnh thành chuỗi Base64 để gửi qua mạng với cùng chất lượng 0.95
+                    const base64Data = canvas.toDataURL('image/jpeg', 0.95);
+                    
+                    // THAY LINK SCRIPT CỦA BẠN VÀO DÒNG BÊN DƯỚI NÀY SAU KHI LÀM XONG BƯỚC 1:
+                    const GOOGLE_SCRIPT_URL = 'DÁN_ĐƯỜNG_LINK_WEB_APP_URL_TỪ_BƯỚC_1_VÀO_ĐÂY'; 
+                    
+                    fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            fileName: fileName,
+                            mimeType: 'image/jpeg',
+                            base64: base64Data
+                        })
+                    }).then(res => res.json())
+                      .then(data => console.log('Đã đẩy thành công lên Cloud:', data))
+                      .catch(err => console.log('Lỗi đẩy Cloud:', err));
+                }
+                // ==========================================
+
+                // HÀM RESET GIAO DIỆN 
                 const finishAndReset = () => {
-                    btn.innerHTML = '✅ Đã hoàn tất!';
-                    btn.style.backgroundColor = '#2980b9'; 
+                    // Cải tiến 2: Đổi câu thông báo cho "ngầu" hơn
+                    btn.innerHTML = '✅ Đã lưu Máy & Cloud!'; 
+                    btn.style.backgroundColor = '#2ecc71'; // Đổi sang màu xanh lá
                     
                     setTimeout(() => {
                         btn.innerHTML = originalText;
@@ -1207,7 +1233,7 @@
                     // Xử lý khi người dùng ấn Hủy Share
                     btn.innerHTML = originalText;
                 }
-            // không nén khi lưu ảnh, giữ nguyên chất lượng, ban đầu 0.95
+            // Không nén khi lưu ảnh, giữ nguyên chất lượng 0.95
             }, 'image/jpeg', 0.95); 
         });
 
