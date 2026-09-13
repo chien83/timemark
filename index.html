@@ -704,12 +704,17 @@
         };
 
         // 2. KHỞI TẠO DANH SÁCH TRẠM VÀO Ô SELECT
-        function initStations() {
+            function initStations() {
             stationSelect.innerHTML = '';
+            
+            // THÊM ĐOẠN NÀY: Tùy chọn ẩn tên trạm lên đầu danh sách
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = "none";
+            defaultOpt.innerText = "❌ Không hiển thị Trạm (Ảnh thường)";
+            stationSelect.appendChild(defaultOpt);
             
             // Lấy danh sách tên trạm từ code cứng
             const stations = Object.keys(hardcodedData);
-            
             // Lấy thêm các trạm nếu sau này user có tính năng tự tạo (dự phòng)
             let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
             const customStations = Object.keys(userStationData);
