@@ -1193,7 +1193,7 @@
         window.addEventListener('online', syncOfflineQueue);
         // ========================================================
 
-        document.getElementById('downloadBtn').addEventListener('click', function() {
+document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Đang xử lý...';
@@ -1205,96 +1205,89 @@
                     return;
                 }
                 
-                // Cải tiến 1: Tên file sẽ tự động kẹp thêm tên Trạm đang chọn cho dễ tìm trên Drive
                 const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : 'Studio';
                 const fileName = `Timemark_${stationName}_${new Date().getTime()}.jpg`;
                 const file = new File([blob], fileName, { type: 'image/jpeg' });
 
                 // ==========================================
-                // BẢN NÂNG CẤP: ÂM THẦM ĐẨY LÊN GOOGLE DRIVE
+                // ĐẨY LÊN DRIVE HOẶC LƯU VÀO KHO OFFLINE
                 // ==========================================
+                const base64Data = canvas.toDataURL('image/jpeg', 0.95);
+                const payloadData = {
+                    fileName: fileName,
+                    mimeType: 'image/jpeg',
+                    base64: base64Data
+                };
+
+                let cloudStatusMsg = '✅ Đã lưu Máy & Cloud!';
+
                 if (navigator.onLine) {
-                    // Chuyển ảnh thành chuỗi Base64 để gửi qua mạng với cùng chất lượng 0.95
-                    const base64Data = canvas.toDataURL('image/jpeg', 0.95);
-                    
-                    // THAY LINK SCRIPT CỦA BẠN VÀO DÒNG BÊN DƯỚI NÀY SAU KHI LÀM XONG BƯỚC 1:
-                    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynmSb_cktvwmeeYi8uDbe8RdAueA0FYan0P5ppPAxvA3dDMOylNezp-zUO1P_lcxyb/exec'; 
-                    
+                    // Nếu có mạng: Thử gửi luôn
                     fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
-                        // BỔ SUNG DÒNG HEADERS NÀY ĐỂ VƯỢT QUA TƯỜNG LỬA CỦA GOOGLE
-                        headers: {
-                            'Content-Type': 'text/plain;charset=utf-8',
-                        },
-                        body: JSON.stringify({
-                            fileName: fileName,
-                            mimeType: 'image/jpeg',
-                            base64: base64Data
-                        })
-                    }).then(res => res.text()) // Sửa thành text() vì Google hay redirect
-                      .then(data => console.log('Đã đẩy thành công lên Cloud:', data))
-                      .catch(err => console.log('Lỗi đẩy Cloud:', err));
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payloadData)
+                    }).then(res => res.text())
+                      .then(data => console.log('Đã đẩy thẳng lên Cloud:', data))
+                      .catch(err => {
+                          // Nếu mạng chập chờn gửi thất bại -> Tự động nhét vào kho Offline
+                          console.log('Mạng chập chờn, đẩy vào kho offline:', err);
+                          saveToOfflineQueue(payloadData);
+                          cloudStatusMsg = '✅ Đã lưu Máy (Chờ mạng để lên Cloud)';
+                      });
+                } else {
+                    // Nếu mất mạng hoàn toàn: Đẩy thẳng vào kho Offline
+                    saveToOfflineQueue(payloadData);
+                    cloudStatusMsg = '✅ Đã lưu Máy (Chờ mạng để lên Cloud)';
                 }
                 // ==========================================
 
                 // HÀM RESET GIAO DIỆN 
                 const finishAndReset = () => {
-                    // Cải tiến 2: Đổi câu thông báo cho "ngầu" hơn
-                    btn.innerHTML = '✅ Đã lưu Máy & Cloud!'; 
-                    btn.style.backgroundColor = '#2ecc71'; // Đổi sang màu xanh lá
+                    btn.innerHTML = cloudStatusMsg; // Thông báo động tùy theo tình trạng mạng
+                    btn.style.backgroundColor = '#2ecc71'; 
                     
                     setTimeout(() => {
                         btn.innerHTML = originalText;
                         btn.style.backgroundColor = ''; 
                         
-                        resetToFreshState(); // Dọn dẹp khung làm việc
-                        bottomMenu.style.display = 'block'; // Hiện lại menu đáy
-                        
-                        // Xóa chữ ghi chú, giữ lại địa chỉ
+                        resetToFreshState(); 
+                        bottomMenu.style.display = 'block'; 
                         document.getElementById('customTextInput').value = '';
 
-                        // TỰ ĐỘNG BẬT LẠI CAMERA NẾU VỪA DÙNG
                         if (lastUsedMode === 'webcam') {
-                            startCameraBtn.click(); // Giả lập lệnh click để bật cam web
+                            startCameraBtn.click(); 
                         }
                     }, 1500);
                 };
 
-                // KIỂM TRA THIẾT BỊ LÀ IOS HAY ANDROID
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
                 try {
-                    // Nếu là iOS (iPhone/iPad) HOẶC trình duyệt đang chạy là Safari -> Bắt buộc dùng Web Share API
                     if ((isIOS || isSafari) && navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
                             files: [file],
                             title: 'Timemark Image'
                         });
-                        finishAndReset(); // Chạy reset khi Share xong
-                    } 
-                    // Nếu là Android hoặc PC -> Ưu tiên lưu thẳng (Direct Download)
-                    else {
+                        finishAndReset(); 
+                    } else {
                         const url = window.URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
                         link.download = fileName;
                         
-                        // Bắt buộc gắn link vào body (chuẩn HTML5)
                         document.body.appendChild(link);
                         link.click();
                         
-                        // Dọn dẹp RAM
                         document.body.removeChild(link);
                         window.URL.revokeObjectURL(url);
                         
-                        finishAndReset(); // Chạy reset khi Tải xong
+                        finishAndReset(); 
                     }
                 } catch (error) {
-                    // Xử lý khi người dùng ấn Hủy Share
                     btn.innerHTML = originalText;
                 }
-            // Không nén khi lưu ảnh, giữ nguyên chất lượng 0.95
             }, 'image/jpeg', 0.95); 
         });
 
