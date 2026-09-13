@@ -371,6 +371,44 @@
         const galleryInput = document.getElementById('galleryInput');
 
         // ==========================================
+            // KHỞI ĐỘNG: DASHBOARD TRANG CHỦ & KIỂM TRA GPS
+            // ==========================================
+            window.addEventListener('load', () => {
+                const dashGps = document.getElementById('dashGpsStatus');
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            if (dashGps) {
+                                const acc = Math.round(position.coords.accuracy);
+                                dashGps.innerHTML = `✅ Sẵn sàng (Sai số: ${acc}m)`;
+                                dashGps.style.color = "#2ecc71";
+                            }
+                        },
+                        (error) => {
+                            if (dashGps) {
+                                dashGps.innerHTML = `❌ Chưa bật định vị`;
+                                dashGps.style.color = "#e74c3c";
+                            }
+                        },
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                    );
+                } else {
+                    if (dashGps) dashGps.innerHTML = "⚠️ Không hỗ trợ GPS";
+                }
+            });
+
+            // Lệnh ẩn Bảng điều khiển khi nhân viên bấm bắt đầu chụp
+            const hideDashboard = () => {
+                const dash = document.getElementById('homeDashboard');
+                if (dash) dash.style.display = 'none';
+            };
+
+            // Gắn lệnh ẩn vào 3 nút chức năng hiện có của bạn
+            startCameraBtn.addEventListener('click', hideDashboard);
+            nativeCameraInput.addEventListener('change', hideDashboard);
+            galleryInput.addEventListener('change', hideDashboard);
+
+        // ==========================================
         // 🔒 TÍNH NĂNG ẨN: KHÓA ADMIN CHO THƯ VIỆN 
         // ==========================================
         const secretTrigger = document.getElementById('secretTrigger');
