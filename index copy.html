@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timemark Studio Pro - V6.3</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json"> 
     <meta name="theme-color" content="#121212">
     <style>
         :root {
@@ -166,10 +166,54 @@
         .btn-full { grid-column: span 2; }
     </style>
     <!-- Thư viện tạo mã QR Code siêu nhẹ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script> -->
+
+    <script src="./qrious.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exifr/dist/lite.umd.js"></script>
 </head>
 <body>
+    <!-- ========================================== -->
+    <!-- MÀN HÌNH CHỜ (DASHBOARD TRANG CHỦ) -->
+    <!-- ========================================== -->
+    <div id="homeDashboard" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #2c3e50 0%, #000000 80%); z-index: 5;">
+        
+        <!-- Logo và Tiêu đề -->
+        <!-- ID 'secretTrigger' ĐÃ ĐƯỢC CHUYỂN VÀO LOGO NÀY -->
+        <img id="secretTrigger" src="./logo_npt.png" alt="EVNNPT" style="width: 220px; opacity: 1; margin-bottom: 25px;">
+        <h2 style="color: #ecf0f1; margin-bottom: 5px; font-family: sans-serif; letter-spacing: 1px; text-transform: uppercase;">GIÁM SÁT HÌNH ẢNH</h2>
+        <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 25px;">Hệ thống Xác thực Dữ liệu Hiện trường</p>
 
+        <!-- SLOGAN AN TOÀN -->
+        <div style="text-align: center; margin-bottom: 35px; width: 85%; max-width: 350px;">
+            <p style="color: #f1c40f; font-size: 16px; font-weight: bold; margin: 0; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); line-height: 1.4;">
+                "AN TOÀN ĐỂ LÀM VIỆC <br>
+                <span style="color: #e74c3c; font-size: 14px;">AN TOÀN ĐỂ BẠN TRỞ VỀ NHÀ"</span>
+            </p>
+        </div>
+
+        <!-- Bảng Trạng thái Hệ thống -->
+        <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; width: 85%; max-width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            
+            <!-- Trạng thái GPS -->
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <span style="font-size: 24px; margin-right: 15px;">📡</span>
+                <div style="flex-grow: 1;">
+                    <div style="color: #bdc3c7; font-size: 12px; text-transform: uppercase;">Tín hiệu Định vị (GPS)</div>
+                    <div id="dashGpsStatus" style="color: #f39c12; font-weight: bold; font-size: 15px; margin-top: 3px;">⏳ Đang dò tìm...</div>
+                </div>
+            </div>
+
+            <!-- Trạng thái Thời gian -->
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 24px; margin-right: 15px;">🕒</span>
+                <div style="flex-grow: 1;">
+                    <div style="color: #bdc3c7; font-size: 12px; text-transform: uppercase;">Đồng bộ Thời gian</div>
+                    <div id="dashTimeStatus" style="color: #2ecc71; font-weight: bold; font-size: 15px; margin-top: 3px;">✅ Đã kết nối</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
     <!-- VIEW ẢNH -->
     <div id="viewArea">
         <div id="cameraContainer">
@@ -193,7 +237,27 @@
             <span id="mainToggleIcon">▼</span>
         </button>
 
+        <!-- BẢNG ĐIỀU KHIỂN ADMIN: ẨN MẶC ĐỊNH, CHỈ HIỆN KHI NHẬP ĐÚNG PASS -->
+        <div id="adminGodModePanel" style="display: none; background: #2c1616; padding: 15px; border-radius: 8px; border: 1px dashed #e74c3c; margin-bottom: 15px;">
+            <label style="color: #e74c3c; font-size: 14px; font-weight: bold; display: block; margin-bottom: 10px;">
+                ⚡ BẢNG ĐIỀU KHIỂN ADMIN (GOD MODE)
+            </label>
+            
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; color: #aaa;">⏳ Ép Giờ & Ngày (Bỏ trống nếu lấy giờ tự động):</label>
+                <input type="datetime-local" id="adminTimeInput" style="width: 100%; padding: 10px; background: #111; color: white; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box; margin-top: 5px;">
+            </div>
+
+            <div>
+                <label style="font-size: 12px; color: #aaa;">📍 Ép Tọa độ GPS (Hoặc lấy từ ảnh gốc):</label>
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <input type="text" id="adminGPSInput" placeholder="Nhập tọa độ..." style="width: 100%; padding: 10px; background: #111; color: #f1c40f; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box;">
+                    <button id="openMapBtn" style="background: #3498db; color: white; border: none; border-radius: 6px; padding: 0 10px; cursor: pointer; font-weight: bold; white-space: nowrap;">🗺️ Mở Map</button>
+                </div>
+            </div>
+        </div>    
         <!-- TOÀN BỘ KHU VỰC KHOANH ĐỎ ĐƯỢC BỌC VÀO ĐÂY (Mặc định ẩn đi) -->
+
         <div id="mainEditPanel" style="display: none; margin-bottom: 15px;">
             <div class="input-box">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -265,11 +329,8 @@
 
     <!-- MENU ĐÁY -->
     <div id="bottomMenu">
-        <div class="header">
-            <!-- Thêm ID 'secretTrigger' vào thẻ h2 để làm điểm chạm -->
-            <h2 id="secretTrigger" style="user-select: none;">Timemark Studio</h2>
-            <p>Giao diện điều khiển chuyên nghiệp</p>
-        </div>
+        <!-- Đã xóa khối header chứa chữ Timemark Studio và chuyển ổ khóa lên Logo -->
+        
         <div class="action-grid">
             <button class="btn btn-orange" id="startCameraBtn">📸 Cam Web</button>
             <label class="btn btn-dark">
@@ -307,6 +368,55 @@
         const nativeCameraInput = document.getElementById('nativeCameraInput');
         const galleryInput = document.getElementById('galleryInput');
 
+            // ==========================================
+            // KHỞI ĐỘNG: DASHBOARD TRANG CHỦ & KIỂM TRA GPS
+            // ==========================================
+// ==========================================
+            // KHỞI ĐỘNG: DASHBOARD TRANG CHỦ & KIỂM TRA GPS
+            // ==========================================
+            window.addEventListener('load', () => {
+                const dashGps = document.getElementById('dashGpsStatus');
+                
+                // 1. Kéo thanh menu chứa 2 nút Cam nổi lên trên cùng màn hình nền đen
+                const btmMenu = document.getElementById('bottomMenu');
+                if(btmMenu) btmMenu.style.zIndex = '10';
+
+                // 2. Kiểm tra GPS
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            if (dashGps) {
+                                const acc = Math.round(position.coords.accuracy);
+                                dashGps.innerHTML = `✅ Sẵn sàng (Sai số: ${acc}m)`;
+                                dashGps.style.color = "#2ecc71";
+                            }
+                        },
+                        (error) => {
+                            if (dashGps) {
+                                dashGps.innerHTML = `❌ Hãy bật GPS & Tải lại`;
+                                dashGps.style.color = "#e74c3c";
+                            }
+                            // Bật hộp thoại cảnh báo đanh thép nếu quên bật GPS
+                            alert("⚠️ CẢNH BÁO BẢO MẬT:\n\nKhông tìm thấy tín hiệu định vị! Vui lòng vuốt màn hình xuống, BẬT ĐỊNH VỊ (GPS) và TẢI LẠI TRANG để hệ thống hoạt động chính xác.");
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                } else {
+                    if (dashGps) dashGps.innerHTML = "⚠️ Không hỗ trợ GPS";
+                }
+            });
+
+            // Lệnh ẩn Bảng điều khiển khi nhân viên bấm bắt đầu chụp
+            const hideDashboard = () => {
+                const dash = document.getElementById('homeDashboard');
+                if (dash) dash.style.display = 'none';
+            };
+
+            // Gắn lệnh ẩn vào 3 nút chức năng hiện có của bạn
+            startCameraBtn.addEventListener('click', hideDashboard);
+            nativeCameraInput.addEventListener('change', hideDashboard);
+            galleryInput.addEventListener('change', hideDashboard);
+
         // ==========================================
         // 🔒 TÍNH NĂNG ẨN: KHÓA ADMIN CHO THƯ VIỆN 
         // ==========================================
@@ -319,13 +429,17 @@
             tapCount++;
             clearTimeout(tapTimer); // Xóa bộ hẹn giờ cũ
             
-            // Nếu bấm đủ 5 lần liên tiếp
             if (tapCount === 5) {
                 tapCount = 0; // Reset bộ đếm
                 const pwd = prompt("🔒 Chế độ Admin. Nhập mật khẩu:");
-                if (pwd === "hchien83") { // <--- BẠN CÓ THỂ ĐỔI MẬT KHẨU TẠI ĐÂY
+                if (pwd === "hchien83") { 
                     galleryBtnWrapper.style.display = 'inline-flex'; // Hiện nút Thư viện
-                    alert("✅ Đã mở khóa nút Thư Viện!");
+                    
+                    // LỆNH MỚI: HIỆN THÊM BẢNG GOD MODE CHO ADMIN
+                    const godPanel = document.getElementById('adminGodModePanel');
+                    if(godPanel) godPanel.style.display = 'block';
+                    
+                    alert("✅ Đã mở khóa Quyền Admin Tối Cao!");
                 } else if (pwd !== null) {
                     alert("❌ Sai mật khẩu!");
                 }
@@ -482,6 +596,56 @@
 
             resetToFreshState();
             
+            // ==========================================
+            // NĂNG LỰC ADMIN: TỰ ĐỘNG HÚT TỌA ĐỘ GỐC CỦA ẢNH TỪ THƯ VIỆN
+            // ==========================================
+            if (mode === 'library') {
+                if (typeof exifr !== 'undefined') {
+                    const btn = document.getElementById('openMapBtn');
+                    const oldText = "🗺️ Mở Map";
+                    
+                    // Báo hiệu đang quét tia X
+                    if(btn) {
+                        btn.innerText = "⏳ Đang quét...";
+                        btn.style.background = "#f39c12"; // Màu cam
+                    }
+                    
+                    exifr.gps(file).then(gps => {
+                        if (gps) {
+                            // TÌM THẤY GPS
+                            const extractedGPS = `${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`;
+                            const gpsInput = document.getElementById('adminGPSInput');
+                            if(gpsInput) gpsInput.value = extractedGPS;
+                            
+                            if(btn) {
+                                btn.innerText = "✅ Đã hút GPS";
+                                btn.style.background = "#2ecc71"; // Màu xanh
+                                setTimeout(() => { btn.innerText = oldText; btn.style.background = "#3498db"; }, 4000);
+                            }
+                            
+                            drawWatermark(); // Vẽ lại ảnh với tọa độ gốc
+                        } else {
+                            // KHÔNG CÓ GPS
+                            if(btn) {
+                                btn.innerText = "❌ Ảnh không có GPS";
+                                btn.style.background = "#e74c3c"; // Màu đỏ
+                                setTimeout(() => { btn.innerText = oldText; btn.style.background = "#3498db"; }, 4000);
+                            }
+                        }
+                    }).catch(err => {
+                        // LỖI ĐỌC FILE
+                        if(btn) {
+                            btn.innerText = "❌ Lỗi đọc ảnh";
+                            btn.style.background = "#e74c3c";
+                            setTimeout(() => { btn.innerText = oldText; btn.style.background = "#3498db"; }, 4000);
+                        }
+                    });
+                } else {
+                    console.warn("⚠️ Chưa tải được thư viện exifr.");
+                }
+            }
+            // ==========================================
+            
             // SỬA LỖI XOAY NGANG: Dùng URL.createObjectURL để bảo toàn dữ liệu EXIF xoay ảnh
             const objectUrl = URL.createObjectURL(file);
             
@@ -490,8 +654,7 @@
                 let targetWidth = img.naturalWidth || img.width;
                 let targetHeight = img.naturalHeight || img.height;
                 
-                // SỬA LỖI MỜ ẢNH: Khống chế kích thước tối đa là 2000px
-                // Giúp web chạy mượt, ảnh giữ độ sắc nét HD mà không làm điện thoại bị tràn RAM, ban đầu giá trị 2000
+                // SỬA LỖI MỜ ẢNH: Khống chế kích thước tối đa là 2500px
                 const MAX_SIZE = 2500;
                 if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
                     const ratio = Math.min(MAX_SIZE / targetWidth, MAX_SIZE / targetHeight);
@@ -704,10 +867,17 @@
                         getLocationBtn.innerText = "📍 Định vị lại";
                     }
                 }, function(error) {
-                    // Nếu là chạy tự động thì im lặng, nếu bấm tay thì báo lỗi
-                    if (isManual) alert("Lỗi: Bạn chưa cấp quyền Vị trí (Location) cho trình duyệt web!");
+                    if (isManual) {
+                        let msg = "⚠️ LỖI ĐỊNH VỊ: ";
+                        if (error.code === 1) msg += "Apple đang chặn quyền GPS. Hãy xóa icon ngoài MH chính, xóa lịch sử Safari và thêm lại!";
+                        else if (error.code === 2) msg += "Không có tín hiệu GPS (Hãy ra chỗ thoáng hơn).";
+                        else if (error.code === 3) msg += "Quá thời gian chờ định vị (Timeout). Hãy thử bấm lại!";
+                        else msg += error.message;
+                        alert(msg);
+                    }
                     getLocationBtn.innerText = "📍 Định vị lại";
-                }, { enableHighAccuracy: true, timeout: 10000 });
+                }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }); 
+                // (Đã tăng timeout lên 20s để iOS có đủ thời gian dò vệ tinh)
             } else {
                 if (isManual) alert("Trình duyệt của điện thoại không hỗ trợ GPS.");
             }
@@ -717,7 +887,7 @@
         getLocationBtn.addEventListener('click', () => fetchLocation(true));
 
         // 2. TỰ ĐỘNG CHẠY KHI VỪA MỞ APP
-        window.addEventListener('load', () => fetchLocation(false));
+         window.addEventListener('load', () => fetchLocation(false));
 
         // 3. TỰ ĐỘNG CHẠY KHI MỞ CAMERA (Đảm bảo vị trí luôn mới nhất khi di chuyển)
         document.getElementById('startCameraBtn').addEventListener('click', () => fetchLocation(false));
@@ -727,6 +897,9 @@
         locationInput.addEventListener('input', drawWatermark);
         customTextInput.addEventListener('input', drawWatermark);
 
+        document.getElementById('adminTimeInput').addEventListener('input', drawWatermark);
+        document.getElementById('adminGPSInput').addEventListener('input', drawWatermark);
+        
         const inputs = ['sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
         inputs.forEach(id => {
             const inputEl = document.getElementById(id);
@@ -738,7 +911,54 @@
                 });
             }
         });
+        // ========================================================
+        // TÍNH NĂNG ANTI-FRAUD: ĐỒNG BỘ GIỜ QUỐC TẾ (BẢN VĨNH CỬU)
+        // ========================================================
+        window.secureTime = { serverTimestamp: null, performanceMark: null, isVerified: false };
 
+        async function syncNetworkTime() {
+            try {
+                let serverTimeStr;
+                try {
+                    // Ưu tiên 1: Máy chủ TimeAPI siêu tốc
+                    const res1 = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');
+                    if (!res1.ok) throw new Error();
+                    const data1 = await res1.json();
+                    serverTimeStr = data1.dateTime;
+                } catch (e) {
+                    // Dự phòng 2: Máy chủ WorldTime
+                    const res2 = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+                    const data2 = await res2.json();
+                    serverTimeStr = data2.datetime;
+                }
+                
+                // Lưu lại mốc giờ chuẩn và thời gian phần cứng
+                window.secureTime.serverTimestamp = new Date(serverTimeStr).getTime();
+                window.secureTime.performanceMark = performance.now();
+                window.secureTime.isVerified = true;
+                
+                // Hiệu ứng đổi màu nút Cam Web để báo hiệu thành công
+                const camBtn = document.getElementById('startCameraBtn');
+                if(camBtn) {
+                    camBtn.innerHTML = '📸 Cam Web <span style="color:#2ecc71">✔</span>';
+                    camBtn.style.borderColor = '#2ecc71';
+                }
+            } catch (error) {
+                // Nếu sập cả 2 máy chủ (Mất mạng)
+                window.secureTime.isVerified = false;
+                const camBtn = document.getElementById('startCameraBtn');
+                if(camBtn) camBtn.innerHTML = '📸 Cam Web ⚠️';
+            }
+        }
+
+        // Kích hoạt đồng bộ giờ tự động
+        window.addEventListener('load', syncNetworkTime);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') syncNetworkTime();
+        });
+        document.getElementById('startCameraBtn').addEventListener('click', syncNetworkTime);
+        document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
+        // ========================================================
         function drawWatermark() {
             if (!img.src) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -755,9 +975,38 @@
             const shortEdge = Math.min(canvas.width, canvas.height);
             const baseSize = Math.floor(shortEdge * (getVal('sizeMain') / 100)); 
             const marginX = canvas.width * (getVal('posX') / 100);
-            const marginY = canvas.height * (getVal('posY') / 100);
+            // Nâng cụm chữ lên một khoảng bằng 0.3 lần kích thước font chữ (baseSize * 0.3)
+            const marginY = (canvas.height * (getVal('posY') / 100)) - (baseSize * 0.3);
 
-            const now = new Date();
+            // ==========================================
+            // BƯỚC 2A: QUYỀN ADMIN - THAO TÚNG THỜI GIAN & GPS
+            // ==========================================
+            let now;
+            let timeStatus = ""; 
+            
+            // 1. THAO TÚNG THỜI GIAN
+            const adminTimeInput = document.getElementById('adminTimeInput');
+            if (adminTimeInput && adminTimeInput.value) {
+                // Nếu Admin nhập giờ -> Ép hệ thống dùng giờ giả
+                now = new Date(adminTimeInput.value);
+                timeStatus = " [✔ Chuẩn QT]"; // Làm giả luôn con dấu Quốc tế để che mắt!
+            } else if (window.secureTime && window.secureTime.isVerified) {
+                // Chế độ bình thường
+                const elapsed = performance.now() - window.secureTime.performanceMark;
+                now = new Date(window.secureTime.serverTimestamp + elapsed);
+                timeStatus = " [✔ Chuẩn QT]"; 
+            } else {
+                now = new Date(); 
+                timeStatus = " [⚠️ Giờ Máy]"; 
+            }
+
+            // 2. THAO TÚNG GPS
+            const adminGPSInput = document.getElementById('adminGPSInput');
+            if (adminGPSInput && adminGPSInput.value.trim() !== "") {
+                // Ép luôn biến GPS toàn cầu thành tọa độ của Admin
+                window.exactGPS = adminGPSInput.value.trim(); 
+            }
+
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const dateStr = `${now.getDate()} Tháng ${now.getMonth() + 1}, ${now.getFullYear()}`;
             const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -782,117 +1031,110 @@
             ctx.fillText(dateStr, dateX, marginY + (baseSize * 0.05));
             ctx.fillText(dayOfWeekStr, dateX, marginY + (baseSize * 0.5));
 
-            // 1. IN ĐỊA CHỈ (Phường, Tỉnh - Màu trắng mặc định)
+            // 1. IN ĐỊA CHỈ
             const locationStr = locationInput.value.trim();
             let currentLineY = marginY + baseSize + (baseSize * 0.2); 
-            
             if (locationStr !== "") {
                 ctx.fillText(locationStr, marginX, currentLineY);
-                currentLineY += (baseSize * 0.4); // Khoảng cách dòng chuẩn
+                currentLineY += (baseSize * 0.4); 
             }
 
-            // 2. IN TỌA ĐỘ GPS (Màu vàng nhạt)
+            // 2. IN TỌA ĐỘ GPS
             if (window.exactGPS && window.exactGPS !== "") {
                 const gpsSize = Math.floor(baseSize * 0.35); 
                 ctx.font = `normal ${gpsSize}px sans-serif`;
                 ctx.fillStyle = '#f1c40f'; 
                 ctx.fillText(`📍 Tọa độ: ${window.exactGPS}`, marginX, currentLineY);
-                currentLineY += (baseSize * 0.4); // Thu hẹp khoảng cách dòng
+                currentLineY += (baseSize * 0.4); 
             }
 
-            // 3. IN TÊN TRẠM (Đã xóa chữ "Trạm:", thu nhỏ size chữ)
+            // 3. IN TÊN TRẠM
             const stationSelectEl = document.getElementById('stationSelect');
             if (stationSelectEl && stationSelectEl.value !== "") {
-                const stationSize = Math.floor(baseSize * 0.4); // Giảm từ 0.45 xuống 0.4
+                const stationSize = Math.floor(baseSize * 0.4); 
                 ctx.font = `bold ${stationSize}px sans-serif`;
                 ctx.fillStyle = '#3498db'; 
                 ctx.fillText(`${stationSelectEl.value}`, marginX, currentLineY);
-                currentLineY += (baseSize * 0.5); // Thu hẹp khoảng cách dòng
+                // TĂNG KHOẢNG CÁCH: Đổi từ 0.42 xuống 0.55 để kéo dòng Thiết bị xuống 
+                currentLineY += (baseSize * 0.55); 
             }
 
-            // 4. IN GHI CHÚ THIẾT BỊ (Highlight kiểu Tem nhãn)
+            // 4. IN GHI CHÚ THIẾT BỊ (Highlight ôm sát chữ)
             const customText = customTextInput.value.trim();
             if (customText !== "") {
                 const noteSize = Math.floor(baseSize * 0.45);
                 ctx.font = `bold ${noteSize}px sans-serif`;
-                const fullText = `${customText}`; // (Đã bỏ icon tờ giấy theo ý bạn)
+                const fullText = `${customText}`; 
                 
-                // Bước 1: Đo chiều dài của dòng chữ để làm hộp vừa vặn
                 const textWidth = ctx.measureText(fullText).width;
-                const padX = baseSize * 0.15; 
-                const padY = baseSize * 0.1;  
+                const padX = baseSize * 0.12; // Giảm lề ngang một chút cho cân đối
                 
-                // Bước 2: Tạm tắt hiệu ứng bóng đổ để khối nền được vuông vức, sắc nét
+                // GIẢM CHIỀU CAO HỘP: Ép lề dọc (padY) mỏng lại để ôm sát chữ
+                const padY = baseSize * 0.05; // Đổi từ 0.1 xuống 0.05
+                
                 ctx.shadowColor = 'transparent';
-                
-                // Bước 3: Vẽ khối nền Highlight (Màu Xanh lá)
                 ctx.fillStyle = '#2ecc71'; 
-                ctx.fillRect(marginX - padX, currentLineY - padY, textWidth + (padX * 2), noteSize + (padY * 2.5));
                 
-                // Bước 4: In chữ đè lên khối nền (Màu Trắng cho nổi bật)
+                // Chiều cao hộp được ép lại (chỉ nhân 2.2 thay vì 2.5) để vừa khít dấu tiếng Việt
+                ctx.fillRect(marginX - padX, currentLineY - padY, textWidth + (padX * 2), noteSize + (padY * 2.2));
+                
                 ctx.fillStyle = '#ffffff'; 
                 ctx.fillText(fullText, marginX, currentLineY);
             }
 
-            // ========================================================
-            // 5. IN LOGO EVNNPT (GÓC TRÊN CÙNG BÊN TRÁI)
-            // ========================================================
+            // 5. IN LOGO EVNNPT
             if (evnLogo.complete && evnLogo.width > 0) {
                 const logoTargetWidth = baseSize * 3.5; 
                 const ratio = evnLogo.height / evnLogo.width;
                 const logoTargetHeight = logoTargetWidth * ratio;
-                
-                const logoTopX = marginX; // Căn lề trái bằng lề của khối chữ
-                const logoTopY = canvas.height * 0.04; // Cách viền trên 4%
+                const logoTopX = marginX; 
+                const logoTopY = canvas.height * 0.04; 
                 
                 ctx.shadowColor = 'transparent'; 
                 ctx.drawImage(evnLogo, logoTopX, logoTopY, logoTargetWidth, logoTargetHeight);
             }
 
             // ========================================================
-            // 6. IN MÃ QR (BẰNG CHỨNG GỐC + LINK MAPS BẤM TRỰC TIẾP)
+            // 6. IN MÃ QR (CHỐNG GIAN LẬN + CHỐNG LỖI MẤT GPS CỦA PWA IOS)
             // ========================================================
+            let mapsUrl = "Chưa cấp quyền GPS hoặc mất tín hiệu";
             if (window.exactGPS && window.exactGPS !== "") {
-                const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
-                const deviceName = customTextInput.value.trim() || "Chưa nhập";
-                
-                // Xóa dấu cách trong tọa độ để link không bị đứt đoạn khi gửi qua Zalo
                 const gpsForLink = window.exactGPS.replace(/\s/g, '');
-                const mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
-                
-                // Gom thông tin, thay dòng "Tọa độ" thành đường link Maps trực tiếp
-                const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}\n- Vị trí: ${mapsUrl}`;
-                
-                // Ép chuẩn mã hóa UTF-8
-                const utf8Payload = unescape(encodeURIComponent(securityPayload));
-
-                const qr = new QRious({
-                    value: utf8Payload, 
-                    size: 300, 
-                    background: 'white',
-                    foreground: 'black',
-                    level: 'M'
-                });
-
-                const qrSize = baseSize * 1.5; 
-                const getVal = (id) => document.getElementById(id).value;
-                const qrX = canvas.width * (getVal('logoX') / 100);
-                const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
-
-                ctx.shadowColor = 'transparent';
-                ctx.fillStyle = 'white';
-                ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
-                ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
-                
-                const hintSize = Math.floor(baseSize * 0.28);
-                ctx.font = `bold ${hintSize}px sans-serif`;
-                ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'center'; 
-                ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
-                ctx.textAlign = 'left'; 
+                mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
             }
 
+            const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
+            const deviceName = customTextInput.value.trim() || "Chưa nhập";
+            
+            const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}${timeStatus}\n- Vị trí: ${mapsUrl}`;
+            
+            const utf8Payload = unescape(encodeURIComponent(securityPayload));
+
+            const qr = new QRious({
+                value: utf8Payload, 
+                size: 300, 
+                background: 'white',
+                foreground: 'black',
+                level: 'M'
+            });
+
+            const qrSize = baseSize * 1.5; 
+            const qrX = canvas.width * (getVal('logoX') / 100);
+            const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
+
+            ctx.shadowColor = 'transparent';
+            ctx.fillStyle = 'white';
+            ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
+            ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
+            
+            const hintSize = Math.floor(baseSize * 0.28);
+            ctx.font = `bold ${hintSize}px sans-serif`;
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center'; 
+            ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
+            ctx.textAlign = 'left'; 
         }
+
 
             document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = this;
@@ -968,6 +1210,16 @@
             // không nén khi lưu ảnh, giữ nguyên chất lượng, ban đầu 0.95
             }, 'image/jpeg', 0.95); 
         });
+
+        // Nút mở nhanh Google Maps cho Admin đi săn tọa độ
+        const openMapBtn = document.getElementById('openMapBtn');
+        if (openMapBtn) {
+            openMapBtn.addEventListener('click', (e) => {
+                e.preventDefault(); // Ngăn nút tải lại trang
+                window.open('https://www.google.com/maps', '_blank');
+            });
+        }
+
     </script>
 </body>
 </html>
