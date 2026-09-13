@@ -1055,7 +1055,7 @@
 
             // 3. IN TÊN TRẠM
             const stationSelectEl = document.getElementById('stationSelect');
-            if (stationSelectEl && stationSelectEl.value !== "") {
+            if (stationSelectEl && stationSelectEl.value !== "" && stationSelectEl.value !== "none") {
                 const stationSize = Math.floor(baseSize * 0.4); 
                 ctx.font = `bold ${stationSize}px sans-serif`;
                 ctx.fillStyle = '#3498db'; 
