@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timemark Studio Pro - V6.3</title>
+    <link rel="manifest" href="manifest.json"> 
+    <meta name="theme-color" content="#121212">
+    <style>
+        :root {
+            --primary: #f39c12;
+            --bg-main: #121212;
+            --bg-panel: #1e1e1e;
+            --text-light: #ffffff;
+            --text-dim: #aaaaaa;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-light);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* KHU VỰC 1: VIEW ẢNH */
+        #viewArea {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Sửa 'center' thành 'flex-start' để ép camera lên trên cùng */
+            margin-top: 10px; /* Thêm chút lề trên cho đẹp */
+            margin-bottom: 5px;
+        }
+
+        #cameraContainer {
+            width: 100%;
+            position: relative;
+            display: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        video {
+            width: 100%;
+            max-height: 80vh;
+            object-fit: cover;
+            background: #000;
+            display: block;
+        }
+        .capture-btn-overlay {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 65px;
+            height: 65px;
+            background-color: white;
+            border-radius: 50%;
+            border: 4px solid var(--primary);
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .capture-btn-overlay:active { background-color: #ddd; transform: translateX(-50%) scale(0.95); }
+        .close-camera-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px; height: 35px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        canvas { 
+            width: 100%; 
+            max-height: 65vh; 
+            object-fit: contain; 
+            border-radius: 12px; 
+            display: none; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* KHU VỰC 2: BẢNG NHẬP THÔNG TIN */
+        .editor-workspace { 
+            width: 100%; 
+            max-width: 600px; 
+            display: none; 
+            flex-direction: column; 
+            gap: 8px; 
+            margin-bottom: 20px;
+        }
+        .input-box {
+            background: var(--bg-panel);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .input-box label {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: block;
+        }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 6px; 
+            border: 1px solid #555; 
+            background: #111; 
+            color: white; 
+            box-sizing: border-box; 
+            font-size: 15px;
+        }
+
+        /* Cài đặt nâng cao (Ẩn mặc định) */
+        .control-group { margin-bottom: 15px; }
+        .control-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #ddd; }
+        .val-display { color: var(--primary); font-weight: bold; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+
+        #toggleSettingsBtn {
+            background: transparent; 
+            color: var(--primary); 
+            border: 1px dashed var(--primary); 
+            padding: 12px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            width: 100%;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        #toggleSettingsBtn:active { background: #333; }
+        .download-btn { background-color: #27ae60; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 100%; transition: 0.2s;}
+
+        /* KHU VỰC 3: MENU ĐÁY */
+        #bottomMenu {
+            width: 100%;
+            max-width: 600px;
+            margin-top: auto;
+            padding-bottom: 20px;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h2 { margin: 0 0 5px 0; font-size: 22px; letter-spacing: 0.5px;}
+        .header p { margin: 0; font-size: 13px; color: var(--text-dim); }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn { padding: 14px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; text-align: center; }
+        .btn:active { transform: scale(0.95); }
+        input[type="file"] { display: none; }
+        .btn-orange { background-color: var(--primary); border: none; color: black; }
+        .btn-dark { background-color: #2a2a2a; border: 1px solid #444; color: white; }
+        .btn-full { grid-column: span 2; }
+    </style>
+    <!-- Thư viện tạo mã QR Code siêu nhẹ -->
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script> -->
+
+    <script src="./qrious.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exifr/dist/lite.umd.js"></script>
+</head>
+<body>
+    <!-- ========================================== -->
+    <!-- MÀN HÌNH CHỜ (DASHBOARD TRANG CHỦ) -->
+    <!-- ========================================== -->
+    <div id="homeDashboard" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #2c3e50 0%, #000000 80%); z-index: 5;">
+        
+        <!-- Logo và Tiêu đề -->
+        <!-- ID 'secretTrigger' ĐÃ ĐƯỢC CHUYỂN VÀO LOGO NÀY -->
+        <img id="secretTrigger" src="./logo_npt.png" alt="EVNNPT" style="width: 220px; opacity: 1; margin-bottom: 25px;">
+        <h2 style="color: #ecf0f1; margin-bottom: 5px; font-family: sans-serif; letter-spacing: 1px; text-transform: uppercase;">GIÁM SÁT HÌNH ẢNH</h2>
+        <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 25px;">Hệ thống Xác thực Dữ liệu Hiện trường</p>
+
+        <!-- SLOGAN AN TOÀN -->
+        <div style="text-align: center; margin-bottom: 35px; width: 85%; max-width: 350px;">
+            <p style="color: #f1c40f; font-size: 16px; font-weight: bold; margin: 0; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); line-height: 1.4;">
+                "AN TOÀN ĐỂ LÀM VIỆC <br>
+                <span style="color: #e74c3c; font-size: 14px;">AN TOÀN ĐỂ BẠN TRỞ VỀ NHÀ"</span>
+            </p>
+        </div>
+
+        <!-- Bảng Trạng thái Hệ thống -->
+        <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; width: 85%; max-width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            
+            <!-- Trạng thái GPS -->
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <span style="font-size: 24px; margin-right: 15px;">📡</span>
+                <div style="flex-grow: 1;">
+                    <div style="color: #bdc3c7; font-size: 12px; text-transform: uppercase;">Tín hiệu Định vị (GPS)</div>
+                    <div id="dashGpsStatus" style="color: #f39c12; font-weight: bold; font-size: 15px; margin-top: 3px;">⏳ Đang dò tìm...</div>
+                </div>
+            </div>
+
+            <!-- Trạng thái Thời gian -->
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 24px; margin-right: 15px;">🕒</span>
+                <div style="flex-grow: 1;">
+                    <div style="color: #bdc3c7; font-size: 12px; text-transform: uppercase;">Đồng bộ Thời gian</div>
+                    <div id="dashTimeStatus" style="color: #2ecc71; font-weight: bold; font-size: 15px; margin-top: 3px;">✅ Đã kết nối</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <!-- VIEW ẢNH -->
+    <div id="viewArea">
+        <div id="cameraContainer">
+            <button class="close-camera-btn" id="closeCameraBtn">✖</button>
+            <video id="videoFeed" autoplay playsinline></video>
+            <div class="capture-btn-overlay" id="captureBtn"></div>
+        </div>
+        <canvas id="photoCanvas"></canvas>
+    </div>
+
+    <div class="editor-workspace" id="editorWorkspace">
+        
+        <!-- NÚT MỚI: Hủy ảnh và chụp lại -->
+        <button id="retakeBtn" style="background: transparent; color: #e74c3c; border: 1px dashed #e74c3c; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; width: 100%; cursor: pointer; transition: 0.2s;">
+            🔄 Hủy ảnh này & Chụp lại
+        </button>
+
+        <!-- Nút Menu Thu/Phóng (Giải pháp gọn gàng) -->
+        <button id="mainToggleBtn" style="background: var(--bg-panel); color: white; border: 1px solid #444; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 15px; width: 100%; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s;">
+            <span>✏️ Chỉnh sửa Thông tin & Ghi chú</span>
+            <span id="mainToggleIcon">▼</span>
+        </button>
+
+        <!-- BẢNG ĐIỀU KHIỂN ADMIN: ẨN MẶC ĐỊNH, CHỈ HIỆN KHI NHẬP ĐÚNG PASS -->
+        <div id="adminGodModePanel" style="display: none; background: #2c1616; padding: 15px; border-radius: 8px; border: 1px dashed #e74c3c; margin-bottom: 15px;">
+            <label style="color: #e74c3c; font-size: 14px; font-weight: bold; display: block; margin-bottom: 10px;">
+                ⚡ BẢNG ĐIỀU KHIỂN ADMIN (GOD MODE)
+            </label>
+            
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; color: #aaa;">⏳ Ép Giờ & Ngày (Bỏ trống nếu lấy giờ tự động):</label>
+                <input type="datetime-local" id="adminTimeInput" style="width: 100%; padding: 10px; background: #111; color: white; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box; margin-top: 5px;">
+            </div>
+
+            <div>
+                <label style="font-size: 12px; color: #aaa;">📍 Ép Tọa độ GPS (Hoặc lấy từ ảnh gốc):</label>
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <input type="text" id="adminGPSInput" placeholder="Nhập tọa độ..." style="width: 100%; padding: 10px; background: #111; color: #f1c40f; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box;">
+                    <button id="openMapBtn" style="background: #3498db; color: white; border: none; border-radius: 6px; padding: 0 10px; cursor: pointer; font-weight: bold; white-space: nowrap;">🗺️ Mở Map</button>
+                </div>
+            </div>
+        </div>    
+        <!-- TOÀN BỘ KHU VỰC KHOANH ĐỎ ĐƯỢC BỌC VÀO ĐÂY (Mặc định ẩn đi) -->
+
+        <div id="mainEditPanel" style="display: none; margin-bottom: 15px;">
+            <div class="input-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin: 0;">📍 Địa chỉ hiển thị:</label>
+                    <button id="getLocationBtn" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; transition: 0.2s;">Tự động lấy vị trí</button>
+                </div>
+                <input type="text" id="locationInput" value="Phú Thọ, P. Hòa Bình" style="margin-bottom: 15px;">
+                <label>🏢 Chọn Trạm / Khu vực:</label>
+                <select id="stationSelect" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #555; background: #111; color: var(--primary); font-size: 15px; margin-bottom: 15px; font-weight: bold; cursor: pointer;">
+                    <!-- Javascript sẽ tự động điền tên các trạm vào đây -->
+                </select>
+                <label>📝 Chọn hoặc Nhập Ghi chú (Mã TB):</label>
+                <div style="display: flex; gap: 8px;">
+                    <!-- Vùng chứa Input và Nút Mũi tên -->
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" id="customTextInput" placeholder="Gõ tên TB..." style="width: 100%; padding-right: 35px; box-sizing: border-box; margin-bottom: 0;">
+                        <!-- NÚT MŨI TÊN BẠN YÊU CẦU ĐƯỢC CHÈN VÀO ĐÂY -->
+                        <button id="dropdownToggleBtn" style="position: absolute; right: 2px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--primary); font-size: 14px; cursor: pointer; height: 90%; width: 30px; display: flex; align-items: center; justify-content: center;">
+                            ▼
+                        </button>
+                        
+                        <!-- Danh sách thiết bị (Tự thiết kế, mặc định ẩn) -->
+                        <ul id="customDropdownList" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #2a2a2a; border: 1px solid #555; border-radius: 6px; margin: 4px 0 0 0; padding: 0; list-style: none; max-height: 160px; overflow-y: auto; z-index: 999; box-shadow: 0 4px 15px rgba(0,0,0,0.7);">
+                        </ul>
+                    </div>
+                    
+                    <button id="saveDeviceBtn" style="background: var(--primary); color: black; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap;">💾 Lưu TB</button>
+                </div>
+            </div>
+
+            <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
+
+            <!-- BẢNG THÔNG SỐ NÂNG CAO -->
+            <div id="advancedSettings" style="display: none; background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px solid #444;">
+                <div class="control-group">
+                    <div class="control-header"><label>Kích thước Ngày giờ:</label> <span class="val-display" id="val-sizeMain">11%</span></div>
+                    <input type="range" id="sizeMain" min="2" max="25" value="11">
+                </div>
+                <div class="control-group">
+                    <div class="control-header"><label>Căn lề Ngang (X):</label> <span class="val-display" id="val-posX">4%</span></div>
+                    <input type="range" id="posX" min="0" max="95" value="4">
+                </div>
+                <div class="control-group">
+                    <div class="control-header"><label>Căn lề Dọc (Y):</label> <span class="val-display" id="val-posY">75%</span></div>
+                    <input type="range" id="posY" min="0" max="95" value="75">
+                </div>
+                <hr style="border-top: 1px solid #444; border-bottom: none; margin: 15px 0;">
+                <div class="control-group">
+                    <div class="control-header"><label>Kích thước Logo:</label> <span class="val-display" id="val-sizeLogo">4%</span></div>
+                    <input type="range" id="sizeLogo" min="2" max="25" value="4">
+                </div>
+                <div class="control-group">
+                    <div class="control-header"><label>Tọa độ Logo Ngang (X):</label> <span class="val-display" id="val-logoX">77%</span></div>
+                    <input type="range" id="logoX" min="0" max="95" value="77">
+                </div>
+                <div class="control-group">
+                    <div class="control-header"><label>Tọa độ Logo Dọc (Y):</label> <span class="val-display" id="val-logoY">92%</span></div>
+                    <input type="range" id="logoY" min="0" max="95" value="92">
+                </div>
+                <div style="display:none;">
+                    <input type="range" id="shadowOpacity" value="70">
+                    <input type="range" id="shadowSize" value="4">
+                </div>
+            </div>
+        </div>
+
+        <button class="download-btn" id="downloadBtn">⬇️ Lưu Ảnh</button>
+    </div>
+
+    <!-- MENU ĐÁY -->
+    <div id="bottomMenu">
+        <!-- Đã xóa khối header chứa chữ Timemark Studio và chuyển ổ khóa lên Logo -->
+        
+        <div class="action-grid">
+            <button class="btn btn-orange" id="startCameraBtn">📸 Cam Web</button>
+            <label class="btn btn-dark">
+                📱 Cam Gốc
+                <input type="file" id="nativeCameraInput" accept="image/*" capture="environment">
+            </label>
+            
+            <!-- Đã thêm id 'galleryBtnWrapper' và style='display:none;' để ẩn đi -->
+            <label class="btn btn-dark btn-full" id="galleryBtnWrapper" style="display: none;">
+                🖼️ Thư Viện
+                <input type="file" id="galleryInput" accept="image/*">
+            </label>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW fail: ', err));
+            });
+        }
+    </script>
+
+    <script>
+        const bottomMenu = document.getElementById('bottomMenu');
+        const editorWorkspace = document.getElementById('editorWorkspace');
+        const canvas = document.getElementById('photoCanvas');
+        const ctx = canvas.getContext('2d');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const videoFeed = document.getElementById('videoFeed');
+        const captureBtn = document.getElementById('captureBtn');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const closeCameraBtn = document.getElementById('closeCameraBtn');
+        
+        const nativeCameraInput = document.getElementById('nativeCameraInput');
+        const galleryInput = document.getElementById('galleryInput');
+
+            // ==========================================
+            // KHỞI ĐỘNG: DASHBOARD TRANG CHỦ & KIỂM TRA GPS
+            // ==========================================
+// ==========================================
+            // KHỞI ĐỘNG: DASHBOARD TRANG CHỦ & KIỂM TRA GPS
+            // ==========================================
+            window.addEventListener('load', () => {
+                const dashGps = document.getElementById('dashGpsStatus');
+                
+                // 1. Kéo thanh menu chứa 2 nút Cam nổi lên trên cùng màn hình nền đen
+                const btmMenu = document.getElementById('bottomMenu');
+                if(btmMenu) btmMenu.style.zIndex = '10';
+
+                // 2. Kiểm tra GPS
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            if (dashGps) {
+                                const acc = Math.round(position.coords.accuracy);
+                                dashGps.innerHTML = `✅ Sẵn sàng (Sai số: ${acc}m)`;
+                                dashGps.style.color = "#2ecc71";
+                            }
+                        },
+                        (error) => {
+                            if (dashGps) {
+                                dashGps.innerHTML = `❌ Hãy bật GPS & Tải lại`;
+                                dashGps.style.color = "#e74c3c";
+                            }
+                            // Bật hộp thoại cảnh báo đanh thép nếu quên bật GPS
+                            alert("⚠️ CẢNH BÁO BẢO MẬT:\n\nKhông tìm thấy tín hiệu định vị! Vui lòng vuốt màn hình xuống, BẬT ĐỊNH VỊ (GPS) và TẢI LẠI TRANG để hệ thống hoạt động chính xác.");
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                } else {
+                    if (dashGps) dashGps.innerHTML = "⚠️ Không hỗ trợ GPS";
+                }
+            });
+
+            // Lệnh ẩn Bảng điều khiển khi nhân viên bấm bắt đầu chụp
+            const hideDashboard = () => {
+                const dash = document.getElementById('homeDashboard');
+                if (dash) dash.style.display = 'none';
+            };
+
+            // Gắn lệnh ẩn vào 3 nút chức năng hiện có của bạn
+            startCameraBtn.addEventListener('click', hideDashboard);
+            nativeCameraInput.addEventListener('change', hideDashboard);
+            galleryInput.addEventListener('change', hideDashboard);
+
+        // ==========================================
+        // 🔒 TÍNH NĂNG ẨN: KHÓA ADMIN CHO THƯ VIỆN 
+        // ==========================================
+        const secretTrigger = document.getElementById('secretTrigger');
+        const galleryBtnWrapper = document.getElementById('galleryBtnWrapper');
+        let tapCount = 0;
+        let tapTimer;
+
+        secretTrigger.addEventListener('click', () => {
+            tapCount++;
+            clearTimeout(tapTimer); // Xóa bộ hẹn giờ cũ
+            
+            if (tapCount === 5) {
+                tapCount = 0; // Reset bộ đếm
+                const pwd = prompt("🔒 Chế độ Admin. Nhập mật khẩu:");
+                if (pwd === "hchien83") { 
+                    galleryBtnWrapper.style.display = 'inline-flex'; // Hiện nút Thư viện
+                    
+                    // LỆNH MỚI: HIỆN THÊM BẢNG GOD MODE CHO ADMIN
+                    const godPanel = document.getElementById('adminGodModePanel');
+                    if(godPanel) godPanel.style.display = 'block';
+                    
+                    alert("✅ Đã mở khóa Quyền Admin Tối Cao!");
+                } else if (pwd !== null) {
+                    alert("❌ Sai mật khẩu!");
+                }
+            }
+            
+            // Nếu ngừng bấm quá 1.5 giây thì tự động reset bộ đếm về 0 (để tránh vô tình bấm trúng)
+            tapTimer = setTimeout(() => {
+                tapCount = 0;
+            }, 1500);
+        });
+        // ==========================================
+
+        let currentStream = null;
+        let lastUsedMode = ''; 
+        let img = new Image();
+
+        // THÊM MỚI: TẢI LOGO EVNNPT VÀO BỘ NHỚ
+        const evnLogo = new Image();
+        evnLogo.src = './logo_npt.png'; // Đảm bảo tên file khớp 100% với tên bạn đã lưu
+        evnLogo.onload = () => { 
+            // Nếu logo tải xong mà đang có ảnh trên màn hình thì tự động vẽ lại để chèn logo lên
+            if (img.src) drawWatermark(); 
+        };
+        // LOGIC ĐÓNG/MỞ BẢNG NÂNG CAO
+        const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
+        const advancedSettings = document.getElementById('advancedSettings');
+        
+        toggleSettingsBtn.addEventListener('click', () => {
+            if(advancedSettings.style.display === 'none') {
+                advancedSettings.style.display = 'block';
+                toggleSettingsBtn.innerHTML = '⚙️ Ẩn Căn chỉnh Thủ công';
+            } else {
+                advancedSettings.style.display = 'none';
+                toggleSettingsBtn.innerHTML = '⚙️ Hiển thị Căn chỉnh Thủ công';
+            }
+        });
+
+        // LOGIC ĐÓNG/MỞ KHU VỰC NHẬP LIỆU CHÍNH
+        const mainToggleBtn = document.getElementById('mainToggleBtn');
+        const mainEditPanel = document.getElementById('mainEditPanel');
+        const mainToggleIcon = document.getElementById('mainToggleIcon');
+
+        mainToggleBtn.addEventListener('click', () => {
+            if(mainEditPanel.style.display === 'none') {
+                mainEditPanel.style.display = 'block';
+                mainToggleIcon.innerText = '▲';
+                mainToggleBtn.style.backgroundColor = '#333';
+            } else {
+                mainEditPanel.style.display = 'none';
+                mainToggleIcon.innerText = '▼';
+                mainToggleBtn.style.backgroundColor = 'var(--bg-panel)';
+            }
+        });
+
+        function stopCameraStream() {
+            if(currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            cameraContainer.style.display = 'none';
+        }
+
+        function resetToFreshState() {
+            stopCameraStream();
+            canvas.style.display = 'none';
+            editorWorkspace.style.display = 'none';
+            advancedSettings.style.display = 'none';
+            toggleSettingsBtn.innerHTML = '⚙️ Hiển thị Căn chỉnh Thủ công';
+            // Thêm 2 dòng này để tự động thu gọn menu khi chụp ảnh mới
+            document.getElementById('mainEditPanel').style.display = 'none';
+            document.getElementById('mainToggleIcon').innerText = '▼';
+        }
+            // XỬ LÝ NÚT HỦY VÀ CHỤP LẠI
+        document.getElementById('retakeBtn').addEventListener('click', () => {
+            resetToFreshState(); // Dọn dẹp khung làm việc
+            bottomMenu.style.display = 'block'; // Hiện lại menu chính
+            
+            // Nếu ảnh vừa rồi bạn chụp bằng Cam Web, nó sẽ tự động bật lại Cam Web cho bạn
+            if (lastUsedMode === 'webcam') {
+                startCameraBtn.click();
+            }
+        });
+        startCameraBtn.addEventListener('click', async () => {
+            lastUsedMode = 'webcam';
+            resetToFreshState();
+            try {
+                // NÂNG CẤP: Ép độ phân giải lên chuẩn 4K và thử kích hoạt lấy nét liên tục (nếu HĐH cho phép)
+                currentStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment', 
+                        width: { ideal: 3840 }, 
+                        height: { ideal: 2160 },
+                        advanced: [{ focusMode: "continuous" }] 
+                    } 
+                });
+                videoFeed.srcObject = currentStream;
+                bottomMenu.style.display = 'none'; 
+                cameraContainer.style.display = 'block';
+            } catch (err) {
+                // Kế hoạch B: Nếu điện thoại cũ không kéo nổi 4K, tự động hạ xuống mức cơ bản
+                try {
+                    currentStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: 'environment' } 
+                    });
+                    videoFeed.srcObject = currentStream;
+                    bottomMenu.style.display = 'none'; 
+                    cameraContainer.style.display = 'block';
+                } catch (fallbackErr) {
+                    alert("Không thể mở Camera. Vui lòng cấp quyền máy ảnh!");
+                    bottomMenu.style.display = 'block';
+                }
+            }
+        });
+
+        closeCameraBtn.addEventListener('click', () => {
+            resetToFreshState();
+            bottomMenu.style.display = 'block';
+        });
+
+        captureBtn.addEventListener('click', () => {
+            // Thiết lập kích thước giới hạn chung (Đồng bộ với Cam Gốc)
+            const MAX_SIZE = 2500; // Bạn có thể để 2000, 3000 hoặc 3500 tùy ý
+            let targetWidth = videoFeed.videoWidth;
+            let targetHeight = videoFeed.videoHeight;
+            
+            // Tính toán thu nhỏ nếu ảnh Video 4K vượt quá mức giới hạn
+            if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
+                const ratio = Math.min(MAX_SIZE / targetWidth, MAX_SIZE / targetHeight);
+                targetWidth = Math.round(targetWidth * ratio);
+                targetHeight = Math.round(targetHeight * ratio);
+            }
+
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            
+            // Vẽ ảnh đã thu nhỏ lên Canvas
+            ctx.drawImage(videoFeed, 0, 0, targetWidth, targetHeight);
+            
+            img.onload = function() {
+                cameraContainer.style.display = 'none';
+                canvas.style.display = 'block';
+                editorWorkspace.style.display = 'flex';
+                drawWatermark();
+                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+            img.src = canvas.toDataURL('image/jpeg');
+            stopCameraStream();
+        });
+
+        function handleFileUpload(e, mode) {
+            const file = e.target.files[0];
+            if (!file) return;
+            lastUsedMode = mode; 
+
+            resetToFreshState();
+            
+            // ==========================================
+            // NĂNG LỰC ADMIN: TỰ ĐỘNG HÚT TỌA ĐỘ GỐC CỦA ẢNH TỪ THƯ VIỆN
+            // ==========================================
+            if (mode === 'library') {
+                if (typeof exifr !== 'undefined') {
+                    const btn = document.getElementById('openMapBtn');
+                    const oldText = "🗺️ Mở Map";
+                    
+                    // Báo hiệu đang quét tia X
+                    if(btn) {
+                        btn.innerText = "⏳ Đang quét...";
+                        btn.style.background = "#f39c12"; // Màu cam
+                    }
+                    
+                    exifr.gps(file).then(gps => {
+                        if (gps) {
+                            // TÌM THẤY GPS
+                            const extractedGPS = `${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`;
+                            const gpsInput = document.getElementById('adminGPSInput');
+                            if(gpsInput) gpsInput.value = extractedGPS;
+                            
+                            if(btn) {
+                                btn.innerText = "✅ Đã hút GPS";
+                                btn.style.background = "#2ecc71"; // Màu xanh
+                                setTimeout(() => { btn.innerText = oldText; btn.style.background = "#3498db"; }, 4000);
+                            }
+                            
+                            drawWatermark(); // Vẽ lại ảnh với tọa độ gốc
+                        } else {
+                            // KHÔNG CÓ GPS
+                            if(btn) {
+                                btn.innerText = "❌ Ảnh không có GPS";
+                                btn.style.background = "#e74c3c"; // Màu đỏ
+                                setTimeout(() => { btn.innerText = oldText; btn.style.background = "#3498db"; }, 4000);
+                            }
+                        }
+                    }).catch(err => {
+                        // LỖI ĐỌC FILE
+                        if(btn) {
+                            btn.innerText = "❌ Lỗi đọc ảnh";
+                            btn.style.background = "#e74c3c";
+                            setTimeout(() => { btn.innerText = oldText; btn.style.background = "#3498db"; }, 4000);
+                        }
+                    });
+                } else {
+                    console.warn("⚠️ Chưa tải được thư viện exifr.");
+                }
+            }
+            // ==========================================
+            
+            // SỬA LỖI XOAY NGANG: Dùng URL.createObjectURL để bảo toàn dữ liệu EXIF xoay ảnh
+            const objectUrl = URL.createObjectURL(file);
+            
+            img.onload = function() {
+                // Lấy kích thước thực tế của ảnh sau khi đã xoay chuẩn
+                let targetWidth = img.naturalWidth || img.width;
+                let targetHeight = img.naturalHeight || img.height;
+                
+                // SỬA LỖI MỜ ẢNH: Khống chế kích thước tối đa là 2500px
+                const MAX_SIZE = 2500;
+                if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
+                    const ratio = Math.min(MAX_SIZE / targetWidth, MAX_SIZE / targetHeight);
+                    targetWidth = Math.round(targetWidth * ratio);
+                    targetHeight = Math.round(targetHeight * ratio);
+                }
+
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                
+                bottomMenu.style.display = 'none';
+                canvas.style.display = 'block';
+                editorWorkspace.style.display = 'flex';
+                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                drawWatermark();
+                
+                // Dọn dẹp đường dẫn ảo để giải phóng RAM
+                URL.revokeObjectURL(objectUrl);
+            }
+            
+            img.src = objectUrl;
+            e.target.value = ''; 
+        }
+
+        nativeCameraInput.addEventListener('change', (e) => handleFileUpload(e, 'nativecam'));
+        galleryInput.addEventListener('change', (e) => handleFileUpload(e, 'library'));
+
+        const locationInput = document.getElementById('locationInput');
+        const stationSelect = document.getElementById('stationSelect');
+        const customTextInput = document.getElementById('customTextInput');
+        const saveDeviceBtn = document.getElementById('saveDeviceBtn');
+        const dropdownToggleBtn = document.getElementById('dropdownToggleBtn');
+        const customDropdownList = document.getElementById('customDropdownList');
+
+        // 1. THƯ VIỆN CỨNG ĐƯỢC PHÂN NHÓM THEO TRẠM (Cấu trúc Từ điển Object)
+        const hardcodedData = {
+            "Trạm 500kV Hòa Bình": [
+                "Máy cắt 221", "Máy cắt 200", "Máy cắt 222", "Máy cắt 341", "Máy cắt 342", "Máy cắt 571", "Máy cắt 572", "Máy cắt 573", "Máy cắt 574", "Máy cắt K504", "Máy cắt KKT504",     
+            ],
+            "Trạm 220kV (Mẫu)": [
+                "Máy cắt 231", "Máy cắt 232", "Dao cách ly 231-1", "Máy biến áp AT2"
+            ],
+            "Khác (Thiết bị chung)": [
+                "Tủ điều khiển bảo vệ", "Rơ le F87", "Bình ắc quy"
+            ]
+        };
+
+        // 2. KHỞI TẠO DANH SÁCH TRẠM VÀO Ô SELECT
+        function initStations() {
+            stationSelect.innerHTML = '';
+            
+            // Lấy danh sách tên trạm từ code cứng
+            const stations = Object.keys(hardcodedData);
+            
+            // Lấy thêm các trạm nếu sau này user có tính năng tự tạo (dự phòng)
+            let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
+            const customStations = Object.keys(userStationData);
+            
+            // Trộn danh sách trạm (xóa trùng lặp)
+            const allStations = [...new Set([...stations, ...customStations])];
+
+            allStations.forEach(station => {
+                const opt = document.createElement('option');
+                opt.value = station;
+                opt.innerText = station;
+                stationSelect.appendChild(opt);
+            });
+
+            // LẮNG NGHE SỰ KIỆN: KHI ĐỔI TRẠM -> TẢI LẠI THIẾT BỊ
+            stationSelect.addEventListener('change', loadDeviceList);
+        }
+
+        // 3. TẢI DANH SÁCH THIẾT BỊ (Dựa theo Trạm đang được chọn trên màn hình)
+        function loadDeviceList() {
+            const currentStation = stationSelect.value;
+            if(!currentStation) return;
+
+            // Lấy thiết bị gốc của trạm đó
+            const hardcodedDevices = hardcodedData[currentStation] || [];
+            
+            // Lấy thiết bị nhân viên tự lưu riêng cho trạm đó
+            let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
+            let userDevices = userStationData[currentStation] || [];
+            
+            const combinedDevices = [...new Set([...hardcodedDevices, ...userDevices])];
+            
+            customDropdownList.innerHTML = ''; 
+            combinedDevices.forEach(device => {
+                const li = document.createElement('li');
+                li.innerText = device;
+                li.style.padding = '12px 15px';
+                li.style.borderBottom = '1px solid #444';
+                li.style.color = 'white';
+                li.style.cursor = 'pointer';
+                li.style.fontSize = '14px';
+                
+                li.addEventListener('mouseover', () => li.style.background = '#444');
+                li.addEventListener('mouseout', () => li.style.background = 'transparent');
+                
+                li.addEventListener('click', () => {
+                    customTextInput.value = device; 
+                    customDropdownList.style.display = 'none'; 
+                    drawWatermark(); 
+                });
+                
+                customDropdownList.appendChild(li);
+            });
+            
+            // Reset ô nhập chữ mỗi khi đổi sang trạm mới để tránh nhầm lẫn
+            customTextInput.value = "";
+            drawWatermark();
+        }
+
+        // 4. BẬT/TẮT DANH SÁCH BẰNG NÚT MŨI TÊN (▼)
+        dropdownToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            customDropdownList.style.display = customDropdownList.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Ẩn danh sách nếu bấm ra khoảng trống ngoài màn hình
+        document.addEventListener('click', (e) => {
+            if (!customTextInput.contains(e.target) && 
+                !dropdownToggleBtn.contains(e.target) && 
+                !customDropdownList.contains(e.target)) {
+                customDropdownList.style.display = 'none';
+            }
+        });
+
+        // 5. XỬ LÝ NÚT "LƯU TB" (Bảo mật: Ghi nhận đúng vào Trạm đang chọn)
+        saveDeviceBtn.addEventListener('click', () => {
+            const newDevice = customTextInput.value.trim();
+            const currentStation = stationSelect.value;
+
+            if (newDevice === "") {
+                alert("Vui lòng gõ tên thiết bị trước khi lưu!");
+                return;
+            }
+
+            let userStationData = JSON.parse(localStorage.getItem('myCustomStationData')) || {};
+            
+            // Nếu trạm này chưa từng có dữ liệu cá nhân nào, tạo một ngăn tủ (mảng) mới cho nó
+            if (!userStationData[currentStation]) {
+                userStationData[currentStation] = [];
+            }
+
+            const hardcodedDevices = hardcodedData[currentStation] || [];
+            
+            if (hardcodedDevices.includes(newDevice) || userStationData[currentStation].includes(newDevice)) {
+                alert(`Thiết bị này đã có sẵn trong danh sách của ${currentStation}!`);
+            } else {
+                // Nhét thiết bị mới vào đúng "ngăn tủ" của trạm đó
+                userStationData[currentStation].push(newDevice);
+                localStorage.setItem('myCustomStationData', JSON.stringify(userStationData));
+                
+                loadDeviceList(); 
+                alert(`Đã lưu thành công "${newDevice}" vào hồ sơ của ${currentStation}!`);
+            }
+        });
+
+        // 6. KÍCH HOẠT HỆ THỐNG KHI MỞ APP
+        initStations();
+        loadDeviceList();
+        const getLocationBtn = document.getElementById('getLocationBtn');
+
+        // TÁCH HÀM LẤY VỊ TRÍ ĐỂ CÓ THỂ CHẠY TỰ ĐỘNG NHIỀU LẦN
+        function fetchLocation(isManual = false) {
+            if ("geolocation" in navigator) {
+                getLocationBtn.innerText = "⏳ Đang dò GPS...";
+                getLocationBtn.style.color = "white";
+                
+                navigator.geolocation.getCurrentPosition(async function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    // THÊM ĐÚNG 1 DÒNG NÀY ĐỂ LƯU TỌA ĐỘ LÀM BẰNG CHỨNG:
+                    window.exactGPS = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+                    
+                    try {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=vi`);
+                        const data = await response.json();
+                        
+                        if (data && data.address) {
+                            const addr = data.address;
+                            // Thuật toán bóc tách khắt khe: Bắt buộc tìm Phường/Xã và Tỉnh
+                            const ward = addr.suburb || addr.village || addr.quarter || addr.hamlet || "";
+                            const province = addr.province || addr.state || addr.city || "";
+                            
+                            let finalStr = "";
+                            if (ward && province) {
+                                finalStr = `${ward}, ${province}`; 
+                            } else {
+                                finalStr = ward || province || "Đã lấy tọa độ GPS";
+                            }
+
+                            locationInput.value = finalStr;
+                            drawWatermark(); 
+                            
+                            getLocationBtn.innerText = "✅ Đã định vị";
+                            getLocationBtn.style.color = "#27ae60";
+                            
+                            setTimeout(() => { 
+                                getLocationBtn.innerText = "📍 Định vị lại"; 
+                                getLocationBtn.style.color = "var(--primary)";
+                            }, 3000);
+                        }
+                    } catch (error) {
+                        if (isManual) alert("Không tải được tên đường. Sẽ dùng tọa độ thô.");
+                        locationInput.value = `GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                        drawWatermark();
+                        getLocationBtn.innerText = "📍 Định vị lại";
+                    }
+                }, function(error) {
+                    if (isManual) {
+                        let msg = "⚠️ LỖI ĐỊNH VỊ: ";
+                        if (error.code === 1) msg += "Apple đang chặn quyền GPS. Hãy xóa icon ngoài MH chính, xóa lịch sử Safari và thêm lại!";
+                        else if (error.code === 2) msg += "Không có tín hiệu GPS (Hãy ra chỗ thoáng hơn).";
+                        else if (error.code === 3) msg += "Quá thời gian chờ định vị (Timeout). Hãy thử bấm lại!";
+                        else msg += error.message;
+                        alert(msg);
+                    }
+                    getLocationBtn.innerText = "📍 Định vị lại";
+                }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }); 
+                // (Đã tăng timeout lên 20s để iOS có đủ thời gian dò vệ tinh)
+            } else {
+                if (isManual) alert("Trình duyệt của điện thoại không hỗ trợ GPS.");
+            }
+        }
+
+        // 1. GÁN VÀO NÚT BẤM (Dành cho khi bạn muốn chủ động tải lại vị trí)
+        getLocationBtn.addEventListener('click', () => fetchLocation(true));
+
+        // 2. TỰ ĐỘNG CHẠY KHI VỪA MỞ APP
+         window.addEventListener('load', () => fetchLocation(false));
+
+        // 3. TỰ ĐỘNG CHẠY KHI MỞ CAMERA (Đảm bảo vị trí luôn mới nhất khi di chuyển)
+        document.getElementById('startCameraBtn').addEventListener('click', () => fetchLocation(false));
+        document.getElementById('nativeCameraInput').addEventListener('click', () => fetchLocation(false));
+
+        // Vẫn giữ tính năng vẽ trực tiếp khi tự gõ tay bằng bàn phím
+        locationInput.addEventListener('input', drawWatermark);
+        customTextInput.addEventListener('input', drawWatermark);
+
+        document.getElementById('adminTimeInput').addEventListener('input', drawWatermark);
+        document.getElementById('adminGPSInput').addEventListener('input', drawWatermark);
+        
+        const inputs = ['sizeMain', 'posX', 'posY', 'sizeLogo', 'logoX', 'logoY', 'shadowOpacity', 'shadowSize'];
+        inputs.forEach(id => {
+            const inputEl = document.getElementById(id);
+            if(inputEl) {
+                inputEl.addEventListener('input', (e) => {
+                    const displayEl = document.getElementById(`val-${id}`);
+                    if(displayEl) displayEl.innerText = `${e.target.value}%`;
+                    drawWatermark();
+                });
+            }
+        });
+        // ========================================================
+        // TÍNH NĂNG ANTI-FRAUD: ĐỒNG BỘ GIỜ QUỐC TẾ (BẢN VĨNH CỬU)
+        // ========================================================
+        window.secureTime = { serverTimestamp: null, performanceMark: null, isVerified: false };
+
+        async function syncNetworkTime() {
+            try {
+                let serverTimeStr;
+                try {
+                    // Ưu tiên 1: Máy chủ TimeAPI siêu tốc
+                    const res1 = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');
+                    if (!res1.ok) throw new Error();
+                    const data1 = await res1.json();
+                    serverTimeStr = data1.dateTime;
+                } catch (e) {
+                    // Dự phòng 2: Máy chủ WorldTime
+                    const res2 = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+                    const data2 = await res2.json();
+                    serverTimeStr = data2.datetime;
+                }
+                
+                // Lưu lại mốc giờ chuẩn và thời gian phần cứng
+                window.secureTime.serverTimestamp = new Date(serverTimeStr).getTime();
+                window.secureTime.performanceMark = performance.now();
+                window.secureTime.isVerified = true;
+                
+                // Hiệu ứng đổi màu nút Cam Web để báo hiệu thành công
+                const camBtn = document.getElementById('startCameraBtn');
+                if(camBtn) {
+                    camBtn.innerHTML = '📸 Cam Web <span style="color:#2ecc71">✔</span>';
+                    camBtn.style.borderColor = '#2ecc71';
+                }
+            } catch (error) {
+                // Nếu sập cả 2 máy chủ (Mất mạng)
+                window.secureTime.isVerified = false;
+                const camBtn = document.getElementById('startCameraBtn');
+                if(camBtn) camBtn.innerHTML = '📸 Cam Web ⚠️';
+            }
+        }
+
+        // Kích hoạt đồng bộ giờ tự động
+        window.addEventListener('load', syncNetworkTime);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') syncNetworkTime();
+        });
+        document.getElementById('startCameraBtn').addEventListener('click', syncNetworkTime);
+        document.getElementById('nativeCameraInput').addEventListener('click', syncNetworkTime);
+        // ========================================================
+        function drawWatermark() {
+            if (!img.src) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            const getVal = (id) => document.getElementById(id).value;
+            const sSize = parseInt(getVal('shadowSize'));
+            const sOpacity = parseInt(getVal('shadowOpacity')) / 100;
+            ctx.shadowColor = `rgba(0, 0, 0, ${sOpacity})`;
+            ctx.shadowBlur = sSize;
+            ctx.shadowOffsetX = sSize / 1.5;
+            ctx.shadowOffsetY = sSize / 1.5;
+
+            const shortEdge = Math.min(canvas.width, canvas.height);
+            const baseSize = Math.floor(shortEdge * (getVal('sizeMain') / 100)); 
+            const marginX = canvas.width * (getVal('posX') / 100);
+            // Nâng cụm chữ lên một khoảng bằng 0.3 lần kích thước font chữ (baseSize * 0.3)
+            const marginY = (canvas.height * (getVal('posY') / 100)) - (baseSize * 0.3);
+
+            // ==========================================
+            // BƯỚC 2A: QUYỀN ADMIN - THAO TÚNG THỜI GIAN & GPS
+            // ==========================================
+            let now;
+            let timeStatus = ""; 
+            
+            // 1. THAO TÚNG THỜI GIAN
+            const adminTimeInput = document.getElementById('adminTimeInput');
+            if (adminTimeInput && adminTimeInput.value) {
+                // Nếu Admin nhập giờ -> Ép hệ thống dùng giờ giả
+                now = new Date(adminTimeInput.value);
+                timeStatus = " [✔ Chuẩn QT]"; // Làm giả luôn con dấu Quốc tế để che mắt!
+            } else if (window.secureTime && window.secureTime.isVerified) {
+                // Chế độ bình thường
+                const elapsed = performance.now() - window.secureTime.performanceMark;
+                now = new Date(window.secureTime.serverTimestamp + elapsed);
+                timeStatus = " [✔ Chuẩn QT]"; 
+            } else {
+                now = new Date(); 
+                timeStatus = " [⚠️ Giờ Máy]"; 
+            }
+
+            // 2. THAO TÚNG GPS
+            const adminGPSInput = document.getElementById('adminGPSInput');
+            if (adminGPSInput && adminGPSInput.value.trim() !== "") {
+                // Ép luôn biến GPS toàn cầu thành tọa độ của Admin
+                window.exactGPS = adminGPSInput.value.trim(); 
+            }
+
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const dateStr = `${now.getDate()} Tháng ${now.getMonth() + 1}, ${now.getFullYear()}`;
+            const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+            const dayOfWeekStr = daysOfWeek[now.getDay()];
+
+            ctx.font = `bold ${baseSize}px sans-serif`;
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = 'white';
+            ctx.fillText(timeStr, marginX, marginY);
+            
+            const timeWidth = ctx.measureText(timeStr).width;
+            ctx.shadowColor = 'transparent';
+            const barX = marginX + timeWidth + (baseSize * 0.2);
+            ctx.fillStyle = '#f39c12';
+            ctx.fillRect(barX, marginY + (baseSize * 0.1), Math.max(3, baseSize * 0.04), baseSize * 0.8);
+            
+            ctx.shadowColor = `rgba(0, 0, 0, ${sOpacity})`;
+            const dateSize = Math.floor(baseSize * 0.35);
+            ctx.font = `${dateSize}px sans-serif`;
+            ctx.fillStyle = 'white';
+            const dateX = barX + (baseSize * 0.2);
+            ctx.fillText(dateStr, dateX, marginY + (baseSize * 0.05));
+            ctx.fillText(dayOfWeekStr, dateX, marginY + (baseSize * 0.5));
+
+            // 1. IN ĐỊA CHỈ
+            const locationStr = locationInput.value.trim();
+            let currentLineY = marginY + baseSize + (baseSize * 0.2); 
+            if (locationStr !== "") {
+                ctx.fillText(locationStr, marginX, currentLineY);
+                currentLineY += (baseSize * 0.4); 
+            }
+
+            // 2. IN TỌA ĐỘ GPS
+            if (window.exactGPS && window.exactGPS !== "") {
+                const gpsSize = Math.floor(baseSize * 0.35); 
+                ctx.font = `normal ${gpsSize}px sans-serif`;
+                ctx.fillStyle = '#f1c40f'; 
+                ctx.fillText(`📍 Tọa độ: ${window.exactGPS}`, marginX, currentLineY);
+                currentLineY += (baseSize * 0.4); 
+            }
+
+            // 3. IN TÊN TRẠM
+            const stationSelectEl = document.getElementById('stationSelect');
+            if (stationSelectEl && stationSelectEl.value !== "") {
+                const stationSize = Math.floor(baseSize * 0.4); 
+                ctx.font = `bold ${stationSize}px sans-serif`;
+                ctx.fillStyle = '#3498db'; 
+                ctx.fillText(`${stationSelectEl.value}`, marginX, currentLineY);
+                // TĂNG KHOẢNG CÁCH: Đổi từ 0.42 xuống 0.55 để kéo dòng Thiết bị xuống 
+                currentLineY += (baseSize * 0.55); 
+            }
+
+            // 4. IN GHI CHÚ THIẾT BỊ (Highlight ôm sát chữ)
+            const customText = customTextInput.value.trim();
+            if (customText !== "") {
+                const noteSize = Math.floor(baseSize * 0.45);
+                ctx.font = `bold ${noteSize}px sans-serif`;
+                const fullText = `${customText}`; 
+                
+                const textWidth = ctx.measureText(fullText).width;
+                const padX = baseSize * 0.12; // Giảm lề ngang một chút cho cân đối
+                
+                // GIẢM CHIỀU CAO HỘP: Ép lề dọc (padY) mỏng lại để ôm sát chữ
+                const padY = baseSize * 0.05; // Đổi từ 0.1 xuống 0.05
+                
+                ctx.shadowColor = 'transparent';
+                ctx.fillStyle = '#2ecc71'; 
+                
+                // Chiều cao hộp được ép lại (chỉ nhân 2.2 thay vì 2.5) để vừa khít dấu tiếng Việt
+                ctx.fillRect(marginX - padX, currentLineY - padY, textWidth + (padX * 2), noteSize + (padY * 2.2));
+                
+                ctx.fillStyle = '#ffffff'; 
+                ctx.fillText(fullText, marginX, currentLineY);
+            }
+
+            // 5. IN LOGO EVNNPT
+            if (evnLogo.complete && evnLogo.width > 0) {
+                const logoTargetWidth = baseSize * 3.5; 
+                const ratio = evnLogo.height / evnLogo.width;
+                const logoTargetHeight = logoTargetWidth * ratio;
+                const logoTopX = marginX; 
+                const logoTopY = canvas.height * 0.04; 
+                
+                ctx.shadowColor = 'transparent'; 
+                ctx.drawImage(evnLogo, logoTopX, logoTopY, logoTargetWidth, logoTargetHeight);
+            }
+
+            // ========================================================
+            // 6. IN MÃ QR (CHỐNG GIAN LẬN + CHỐNG LỖI MẤT GPS CỦA PWA IOS)
+            // ========================================================
+            let mapsUrl = "Chưa cấp quyền GPS hoặc mất tín hiệu";
+            if (window.exactGPS && window.exactGPS !== "") {
+                const gpsForLink = window.exactGPS.replace(/\s/g, '');
+                mapsUrl = `https://maps.google.com/?q=${gpsForLink}`;
+            }
+
+            const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : "Không rõ";
+            const deviceName = customTextInput.value.trim() || "Chưa nhập";
+            
+            const securityPayload = `[BẰNG CHỨNG GỐC]\n- Trạm: ${stationName}\n- TB: ${deviceName}\n- Lúc: ${timeStr} - ${dateStr}${timeStatus}\n- Vị trí: ${mapsUrl}`;
+            
+            const utf8Payload = unescape(encodeURIComponent(securityPayload));
+
+            const qr = new QRious({
+                value: utf8Payload, 
+                size: 300, 
+                background: 'white',
+                foreground: 'black',
+                level: 'M'
+            });
+
+            const qrSize = baseSize * 1.5; 
+            const qrX = canvas.width * (getVal('logoX') / 100);
+            const qrY = (canvas.height * (getVal('logoY') / 100)) - qrSize;
+
+            ctx.shadowColor = 'transparent';
+            ctx.fillStyle = 'white';
+            ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
+            ctx.drawImage(qr.canvas, qrX, qrY, qrSize, qrSize);
+            
+            const hintSize = Math.floor(baseSize * 0.28);
+            ctx.font = `bold ${hintSize}px sans-serif`;
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center'; 
+            ctx.fillText("Quét để Xác thực", qrX + (qrSize / 2), qrY + qrSize + (baseSize * 0.35));
+            ctx.textAlign = 'left'; 
+        }
+
+        // ========================================================
+        // HỆ THỐNG TRẠM TRUNG CHUYỂN OFFLINE (SỬ DỤNG INDEXEDDB)
+        // ========================================================
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynmSb_cktvwmeeYi8uDbe8RdAueA0FYan0P5ppPAxvA3dDMOylNezp-zUO1P_lcxyb/exec';
+        let offlineDB;
+        const requestDB = indexedDB.open("NptSmartCamDB", 1);
+        
+        requestDB.onupgradeneeded = (e) => {
+            offlineDB = e.target.result;
+            // Tạo một "nhà kho" tên là pendingUploads để chứa ảnh chưa gửi được
+            if (!offlineDB.objectStoreNames.contains("pendingUploads")) {
+                offlineDB.createObjectStore("pendingUploads", { keyPath: "id" });
+            }
+        };
+        
+        requestDB.onsuccess = (e) => {
+            offlineDB = e.target.result;
+            syncOfflineQueue(); // Vừa mở app lên là kiểm tra kho xem có ảnh tồn không
+        };
+
+        // Hàm nhét ảnh vào kho khi mất mạng hoặc mạng lỗi
+        function saveToOfflineQueue(payload) {
+            if (!offlineDB) return;
+            const tx = offlineDB.transaction("pendingUploads", "readwrite");
+            tx.objectStore("pendingUploads").put({ id: Date.now(), payload: payload });
+            console.log("Đã lưu tạm 1 ảnh vào kho Offline.");
+        }
+
+        // Hàm dọn kho (Tự động gửi ảnh đi khi có mạng)
+        function syncOfflineQueue() {
+            if (!navigator.onLine || !offlineDB) return;
+            
+            const tx = offlineDB.transaction("pendingUploads", "readonly");
+            const store = tx.objectStore("pendingUploads");
+            const req = store.getAll();
+            
+            req.onsuccess = () => {
+                const items = req.result;
+                if(items.length > 0) console.log(`Phát hiện mạng! Đang đồng bộ ${items.length} ảnh tồn đọng...`);
+                
+                items.forEach(item => {
+                    fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(item.payload)
+                    }).then(res => res.text()).then(() => {
+                        // Gửi xong thì xóa file đó khỏi kho để giải phóng bộ nhớ điện thoại
+                        offlineDB.transaction("pendingUploads", "readwrite").objectStore("pendingUploads").delete(item.id);
+                        console.log("Đã đồng bộ bù thành công:", item.payload.fileName);
+                    }).catch(err => console.log("Lỗi khi đồng bộ bù:", err));
+                });
+            };
+        }
+
+        // ⚡ LẮNG NGHE SỰ KIỆN: Bất cứ khi nào điện thoại báo có mạng -> Lập tức chạy hàm dọn kho
+        window.addEventListener('online', syncOfflineQueue);
+        // ========================================================
+
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Đang xử lý...';
+
+            canvas.toBlob(async function(blob) {
+                if (!blob) {
+                    alert("Có lỗi xảy ra khi xử lý ảnh!");
+                    btn.innerHTML = originalText;
+                    return;
+                }
+                
+                const stationName = document.getElementById('stationSelect') ? document.getElementById('stationSelect').value : 'Studio';
+                const fileName = `Timemark_${stationName}_${new Date().getTime()}.jpg`;
+                const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+                // ==========================================
+                // ĐẨY LÊN DRIVE HOẶC LƯU VÀO KHO OFFLINE
+                // ==========================================
+                const base64Data = canvas.toDataURL('image/jpeg', 0.95);
+                const payloadData = {
+                    fileName: fileName,
+                    mimeType: 'image/jpeg',
+                    base64: base64Data
+                };
+
+                let cloudStatusMsg = '✅ Đã lưu Máy & Cloud!';
+
+                if (navigator.onLine) {
+                    // Nếu có mạng: Thử gửi luôn
+                    fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payloadData)
+                    }).then(res => res.text())
+                      .then(data => console.log('Đã đẩy thẳng lên Cloud:', data))
+                      .catch(err => {
+                          // Nếu mạng chập chờn gửi thất bại -> Tự động nhét vào kho Offline
+                          console.log('Mạng chập chờn, đẩy vào kho offline:', err);
+                          saveToOfflineQueue(payloadData);
+                          cloudStatusMsg = '✅ Đã lưu Máy (Chờ mạng để lên Cloud)';
+                      });
+                } else {
+                    // Nếu mất mạng hoàn toàn: Đẩy thẳng vào kho Offline
+                    saveToOfflineQueue(payloadData);
+                    cloudStatusMsg = '✅ Đã lưu Máy (Chờ mạng để lên Cloud)';
+                }
+                // ==========================================
+
+                // HÀM RESET GIAO DIỆN 
+                const finishAndReset = () => {
+                    btn.innerHTML = cloudStatusMsg; // Thông báo động tùy theo tình trạng mạng
+                    btn.style.backgroundColor = '#2ecc71'; 
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.backgroundColor = ''; 
+                        
+                        resetToFreshState(); 
+                        bottomMenu.style.display = 'block'; 
+                        document.getElementById('customTextInput').value = '';
+
+                        if (lastUsedMode === 'webcam') {
+                            startCameraBtn.click(); 
+                        }
+                    }, 1500);
+                };
+
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+                try {
+                    if ((isIOS || isSafari) && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Timemark Image'
+                        });
+                        finishAndReset(); 
+                    } else {
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = fileName;
+                        
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                        
+                        finishAndReset(); 
+                    }
+                } catch (error) {
+                    btn.innerHTML = originalText;
+                }
+            }, 'image/jpeg', 0.95); 
+        });
+
+        // Nút mở nhanh Google Maps cho Admin đi săn tọa độ
+        const openMapBtn = document.getElementById('openMapBtn');
+        if (openMapBtn) {
+            openMapBtn.addEventListener('click', (e) => {
+                e.preventDefault(); // Ngăn nút tải lại trang
+                window.open('https://www.google.com/maps', '_blank');
+            });
+        }
+
+    </script>
+</body>
+</html>
