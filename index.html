@@ -1261,36 +1261,26 @@
                     }, 1500);
                 };
 
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
+            // TẮT TÍNH NĂNG SHARE: Ép mọi thiết bị (kể cả iOS) tải thẳng về máy
                 try {
-                    if ((isIOS || isSafari) && navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Timemark Image'
-                        });
-                        finishAndReset(); 
-                    } else {
-                        const url = window.URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = fileName;
-                        
-                        document.body.appendChild(link);
-                        link.click();
-                        
-                        document.body.removeChild(link);
-                        window.URL.revokeObjectURL(url);
-                        
-                        finishAndReset(); 
-                    }
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+
+                    document.body.appendChild(link);
+                    link.click();
+
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+
+                    finishAndReset(); 
                 } catch (error) {
                     btn.innerHTML = originalText;
+                    console.error("Lỗi khi tải ảnh:", error);
                 }
             }, 'image/jpeg', 0.95); 
         });
-
         // Nút mở nhanh Google Maps cho Admin đi săn tọa độ
         const openMapBtn = document.getElementById('openMapBtn');
         if (openMapBtn) {
