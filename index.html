@@ -238,16 +238,17 @@
 
     <div class="editor-workspace" id="editorWorkspace">
         
-        <!-- NÚT MỚI: Hủy ảnh và chụp lại -->
-        <button id="retakeBtn" style="background: transparent; color: #e74c3c; border: 1px dashed #e74c3c; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; width: 100%; cursor: pointer; transition: 0.2s;">
-            🔄 Hủy & Chụp lại
-        </button>
+        <!-- GỘP 2 NÚT THÀNH 1 HÀNG NGANG BẰNG FLEXBOX -->
+        <div style="display: flex; gap: 8px; width: 100%;">
+            <button id="retakeBtn" style="background: transparent; color: #e74c3c; border: 1px dashed #e74c3c; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; flex: 1;">
+                🔄 Hủy & Chụp lại
+            </button>
 
-        <!-- Nút Menu Thu/Phóng (Giải pháp gọn gàng) -->
-        <button id="mainToggleBtn" style="background: var(--bg-panel); color: white; border: 1px solid #444; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 15px; width: 100%; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s;">
-            <span>✏️ Thêm Thông tin</span>
-            <span id="mainToggleIcon">▼</span>
-        </button>
+            <button id="mainToggleBtn" style="background: var(--bg-panel); color: white; border: 1px solid #444; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; flex: 1;">
+                <span>✏️ Thêm thông tin</span>
+                <span id="mainToggleIcon">▼</span>
+            </button>
+        </div>
 
         <!-- BẢNG ĐIỀU KHIỂN ADMIN: ẨN MẶC ĐỊNH, CHỈ HIỆN KHI NHẬP ĐÚNG PASS -->
         <div id="adminGodModePanel" style="display: none; background: #2c1616; padding: 15px; border-radius: 8px; border: 1px dashed #e74c3c; margin-bottom: 15px;">
