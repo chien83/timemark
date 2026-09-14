@@ -21,13 +21,14 @@
             color: var(--text-light);
             margin: 0;
             padding: 15px;
+            /* THÊM/SỬA 2 DÒNG NÀY Ở DƯỚI CÙNG THẺ BODY */
+            min-height: 100dvh; /* Dùng dvh thay cho vh để Safari tự né thanh bar */
+            padding-bottom: 40px; /* Nhồi thêm một lớp đệm khí dưới đáy */
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
             box-sizing: border-box;
-            /* THÊM DÒNG NÀY: Chống hiệu ứng nảy (rubber-band) của iOS */
-            overscroll-behavior: none;
+            overscroll-behavior: none; 
         }
 
         /* KHU VỰC 1: VIEW ẢNH */
@@ -93,7 +94,7 @@
 
         canvas { 
             width: 100%; 
-            max-height: 80vh; /* Ảnh mặc định phóng to 80% màn hình */
+            max-height: 75dvh; /* Ảnh mặc định phóng to 80% màn hình */
             object-fit: contain; 
             border-radius: 12px; 
             display: none; 
@@ -103,7 +104,7 @@
 
         /* Lớp này sẽ được JS tự động thêm vào khi mở bảng thông tin */
         .canvas-shrink {
-            max-height: 50vh !important; /* Ép ảnh thu nhỏ lại còn 50% */
+            max-height: 45dvh !important; /* Ép ảnh thu nhỏ lại còn 45% */
         }
 
         /* KHU VỰC 2: BẢNG NHẬP THÔNG TIN */
