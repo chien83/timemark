@@ -238,15 +238,15 @@
 
     <div class="editor-workspace" id="editorWorkspace">
         
-        <!-- GỘP 2 NÚT THÀNH 1 HÀNG NGANG BẰNG FLEXBOX (ĐÃ TỐI ƯU MOBILE) -->
-        <div style="display: flex; gap: 8px; width: 100%; align-items: stretch;">
+        <!-- GỘP 2 NÚT THÀNH 1 HÀNG NGANG (ĐÃ FIX LỖI VIỀN TRÊN IOS) -->
+        <div style="display: flex; gap: 8px; width: 100%; align-items: stretch; margin-top: 12px;">
             
-            <button id="retakeBtn" style="background: transparent; color: #e74c3c; border: 1px dashed #e74c3c; padding: 10px 5px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;">
-                🔄Hủy & Chụp lại
+            <button id="retakeBtn" style="-webkit-appearance: none; background: transparent; color: #e74c3c; border: 1px dashed #e74c3c; padding: 10px 5px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;">
+                🔄 Hủy & Chụp lại
             </button>
 
-            <button id="mainToggleBtn" style="background: var(--bg-panel); color: white; border: 1px solid #444; padding: 10px 8px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; flex: 1;">
-                <span style="text-align: left; line-height: 1.2;">✏️Thêm thông tin</span>
+            <button id="mainToggleBtn" style="-webkit-appearance: none; background: var(--bg-panel); color: white; border: 1px solid #444; padding: 10px 8px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; flex: 1;">
+                <span style="text-align: left; line-height: 1.2;">✏️ Thêm thông tin</span>
                 <span id="mainToggleIcon" style="margin-left: 2px;">▼</span>
             </button>
             
