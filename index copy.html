@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timemark</title>
+    <link rel="manifest" href="manifest.json"> 
+    <meta name="theme-color" content="#121212">
+    <style>
+        :root {
+            --primary: #f39c12;
+            --bg-main: #121212;
+            --bg-panel: #1e1e1e;
+            --text-light: #ffffff;
+            --text-dim: #aaaaaa;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-light);
+            margin: 0;
+            padding: 15px;
+            /* THÊM/SỬA 2 DÒNG NÀY Ở DƯỚI CÙNG THẺ BODY */
+            min-height: 100dvh; /* Dùng dvh thay cho vh để Safari tự né thanh bar */
+            padding-bottom: 40px; /* Nhồi thêm một lớp đệm khí dưới đáy */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+            overscroll-behavior: none; 
+        }
+
+        /* KHU VỰC 1: VIEW ẢNH */
+        #viewArea {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            
+            /* THÊM MỚI: GHIM ẢNH LÊN ĐỈNH MÀN HÌNH */
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: var(--bg-main); 
+            padding: 10px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
+        }
+
+        #cameraContainer {
+            width: 100%;
+            position: relative;
+            display: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        video {
+            width: 100%;
+            max-height: 80vh;
+            object-fit: cover;
+            background: #000;
+            display: block;
+        }
+        .capture-btn-overlay {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 65px;
+            height: 65px;
+            background-color: white;
+            border-radius: 50%;
+            border: 4px solid var(--primary);
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .capture-btn-overlay:active { background-color: #ddd; transform: translateX(-50%) scale(0.95); }
+        .close-camera-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px; height: 35px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        canvas { 
+            width: 100%; 
+            max-height: 75dvh; /* Ảnh mặc định phóng to 80% màn hình */
+            object-fit: contain; 
+            border-radius: 12px; 
+            display: none; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: max-height 0.3s ease-in-out; /* Hiệu ứng thu phóng mượt mà */
+        }
+
+        /* Lớp này sẽ được JS tự động thêm vào khi mở bảng thông tin */
+        .canvas-shrink {
+            max-height: 45dvh !important; /* Ép ảnh thu nhỏ lại còn 45% */
+        }
+
+        /* KHU VỰC 2: BẢNG NHẬP THÔNG TIN */
+        .editor-workspace { 
+            width: 100%; 
+            max-width: 600px; 
+            display: none; 
+            flex-direction: column; 
+            gap: 8px; 
+            margin-bottom: 20px;
+        }
+        .input-box {
+            background: var(--bg-panel);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .input-box label {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: block;
+        }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 6px; 
+            border: 1px solid #555; 
+            background: #111; 
+            color: white; 
+            box-sizing: border-box; 
+            font-size: 15px;
+        }
+
+        /* Cài đặt nâng cao (Ẩn mặc định) */
+        .control-group { margin-bottom: 15px; }
+        .control-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #ddd; }
+        .val-display { color: var(--primary); font-weight: bold; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+
+        #toggleSettingsBtn {
+            background: transparent; 
+            color: var(--primary); 
+            border: 1px dashed var(--primary); 
+            padding: 12px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            width: 100%;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        #toggleSettingsBtn:active { background: #333; }
+        .download-btn { background-color: #27ae60; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 100%; transition: 0.2s;}
+
+        /* KHU VỰC 3: MENU ĐÁY */
+        #bottomMenu {
+            width: 100%;
+            max-width: 600px;
+            margin-top: auto;
+            padding-bottom: 20px;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h2 { margin: 0 0 5px 0; font-size: 22px; letter-spacing: 0.5px;}
+        .header p { margin: 0; font-size: 13px; color: var(--text-dim); }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn { padding: 14px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; text-align: center; }
+        .btn:active { transform: scale(0.95); }
+        input[type="file"] { display: none; }
+        .btn-orange { background-color: var(--primary); border: none; color: black; }
+        .btn-dark { background-color: #2a2a2a; border: 1px solid #444; color: white; }
+        .btn-full { grid-column: span 2; }
+    </style>
+    <!-- Thư viện tạo mã QR Code siêu nhẹ -->
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script> -->
+
+    <script src="./qrious.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exifr/dist/lite.umd.js"></script>
+</head>
+<body>
+    <!-- ========================================== -->
+    <!-- MÀN HÌNH CHỜ (DASHBOARD TRANG CHỦ) -->
+    <!-- ========================================== -->
+    <div id="homeDashboard" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #2c3e50 0%, #000000 80%); z-index: 5;">
+        
+        <!-- Logo và Tiêu đề -->
+        <!-- ID 'secretTrigger' ĐÃ ĐƯỢC CHUYỂN VÀO LOGO NÀY -->
+        <img id="secretTrigger" src="./logo_npt.png" alt="EVNNPT" style="width: 220px; opacity: 1; margin-bottom: 25px;">
+        <h2 style="color: #ecf0f1; margin-bottom: 5px; font-family: sans-serif; letter-spacing: 1px; text-transform: uppercase;">GIÁM SÁT HÌNH ẢNH</h2>
+        <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 25px;">Hệ thống Xác thực Dữ liệu Hiện trường</p>
+
+        <!-- SLOGAN AN TOÀN -->
+        <div style="text-align: center; margin-bottom: 35px; width: 85%; max-width: 350px;">
+            <p style="color: #f1c40f; font-size: 16px; font-weight: bold; margin: 0; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); line-height: 1.4;">
+                "AN TOÀN ĐỂ LÀM VIỆC <br>
+                <span style="color: #e74c3c; font-size: 14px;">AN TOÀN ĐỂ BẠN TRỞ VỀ NHÀ"</span>
+            </p>
+        </div>
+
+        <!-- Bảng Trạng thái Hệ thống -->
+        <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; width: 85%; max-width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            
+            <!-- Trạng thái GPS -->
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <span style="font-size: 24px; margin-right: 15px;">📡</span>
+                <div style="flex-grow: 1;">
+                    <div style="color: #bdc3c7; font-size: 12px; text-transform: uppercase;">Tín hiệu Định vị (GPS)</div>
+                    <div id="dashGpsStatus" style="color: #f39c12; font-weight: bold; font-size: 15px; margin-top: 3px;">⏳ Đang dò tìm...</div>
+                </div>
+            </div>
+
+            <!-- Trạng thái Thời gian -->
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 24px; margin-right: 15px;">🕒</span>
+                <div style="flex-grow: 1;">
+                    <div style="color: #bdc3c7; font-size: 12px; text-transform: uppercase;">Đồng bộ Thời gian</div>
+                    <div id="dashTimeStatus" style="color: #2ecc71; font-weight: bold; font-size: 15px; margin-top: 3px;">✅ Đã kết nối</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <!-- VIEW ẢNH -->
+    <div id="viewArea">
+        <div id="cameraContainer">
+            <button class="close-camera-btn" id="closeCameraBtn">✖</button>
+            <video id="videoFeed" autoplay playsinline></video>
+            <div class="capture-btn-overlay" id="captureBtn"></div>
+        </div>
+        <canvas id="photoCanvas"></canvas>
+    </div>
+
+    <div class="editor-workspace" id="editorWorkspace">
+        
+        <!-- GỘP 2 NÚT THÀNH 1 HÀNG NGANG (ĐÃ FIX LỖI VIỀN TRÊN IOS) -->
+        <div style="display: flex; gap: 8px; width: 100%; align-items: stretch; margin-top: 12px;">
+            
+            <button id="retakeBtn" style="-webkit-appearance: none; background: transparent; color: #e74c3c; border: 1px dashed #e74c3c; padding: 10px 5px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;">
+                🔄 Hủy & Chụp lại
+            </button>
+
+            <button id="mainToggleBtn" style="-webkit-appearance: none; background: var(--bg-panel); color: white; border: 1px solid #444; padding: 10px 8px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; flex: 1;">
+                <span style="text-align: left; line-height: 1.2;">✏️ Thêm thông tin</span>
+                <span id="mainToggleIcon" style="margin-left: 2px;">▼</span>
+            </button>
+            
+        </div>
+
+        <!-- BẢNG ĐIỀU KHIỂN ADMIN: ẨN MẶC ĐỊNH, CHỈ HIỆN KHI NHẬP ĐÚNG PASS -->
+        <div id="adminGodModePanel" style="display: none; background: #2c1616; padding: 15px; border-radius: 8px; border: 1px dashed #e74c3c; margin-bottom: 15px;">
+            <label style="color: #e74c3c; font-size: 14px; font-weight: bold; display: block; margin-bottom: 10px;">
+                ⚡ BẢNG ĐIỀU KHIỂN ADMIN (GOD MODE)
+            </label>
+            
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; color: #aaa;">⏳ Ép Giờ & Ngày (Bỏ trống nếu lấy giờ tự động):</label>
+                <input type="datetime-local" id="adminTimeInput" style="width: 100%; padding: 10px; background: #111; color: white; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box; margin-top: 5px;">
+            </div>
+
+            <div>
+                <label style="font-size: 12px; color: #aaa;">📍 Ép Tọa độ GPS (Hoặc lấy từ ảnh gốc):</label>
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <input type="text" id="adminGPSInput" placeholder="Nhập tọa độ..." style="width: 100%; padding: 10px; background: #111; color: #f1c40f; border: 1px solid #e74c3c; border-radius: 6px; box-sizing: border-box;">
+                    <button id="openMapBtn" style="background: #3498db; color: white; border: none; border-radius: 6px; padding: 0 10px; cursor: pointer; font-weight: bold; white-space: nowrap;">🗺️ Mở Map</button>
+                </div>
+            </div>
+        </div>    
+        <!-- TOÀN BỘ KHU VỰC KHOANH ĐỎ ĐƯỢC BỌC VÀO ĐÂY (Mặc định ẩn đi) -->
+
+        <div id="mainEditPanel" style="display: none; margin-bottom: 15px;">
+            <div class="input-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin: 0;">📍 Địa chỉ hiển thị:</label>
+                    <button id="getLocationBtn" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; transition: 0.2s;">Tự động lấy vị trí</button>
+                </div>
+                <input type="text" id="locationInput" value="Phú Thọ, P. Hòa Bình" style="margin-bottom: 15px;">
+                <label>🏢 Chọn Trạm / Khu vực:</label>
+                <select id="stationSelect" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #555; background: #111; color: var(--primary); font-size: 15px; margin-bottom: 15px; font-weight: bold; cursor: pointer;">
+                    <!-- Javascript sẽ tự động điền tên các trạm vào đây -->
+                </select>
+                <label>📝 Chọn hoặc Nhập Ghi chú (Mã TB):</label>
+                <div style="display: flex; gap: 8px;">
+                    <!-- Vùng chứa Input và Nút Mũi tên -->
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" id="customTextInput" placeholder="Gõ tên TB..." style="width: 100%; padding-right: 35px; box-sizing: border-box; margin-bottom: 0;">
+                        <!-- NÚT MŨI TÊN BẠN YÊU CẦU ĐƯỢC CHÈN VÀO ĐÂY -->
+                        <button id="dropdownToggleBtn" style="position: absolute; right: 2px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--primary); font-size: 14px; cursor: pointer; height: 90%; width: 30px; display: flex; align-items: center; justify-content: center;">
+                            ▼
+                        </button>
+                        
+                        <!-- Danh sách thiết bị (Tự thiết kế, mặc định ẩn) -->
+                        <ul id="customDropdownList" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #2a2a2a; border: 1px solid #555; border-radius: 6px; margin: 4px 0 0 0; padding: 0; list-style: none; max-height: 160px; overflow-y: auto; z-index: 999; box-shadow: 0 4px 15px rgba(0,0,0,0.7);">
+                        </ul>
+                    </div>
+                    
+                    <button id="saveDeviceBtn" style="background: var(--primary); color: black; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap;">💾 Lưu TB</button>
+                </div>
+            </div>
+
+            <button id="toggleSettingsBtn">⚙️ Hiển thị Căn chỉnh Thủ công</button>
+
+            <!-- BẢNG THÔNG SỐ NÂNG CAO (ĐÃ ĐƯỢC CHIA 2 CỘT GỌN GÀNG) -->
+            <div id="advancedSettings" style="display: none; background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px solid #444; max-height: 40vh; overflow-y: auto;">
+                
+                <!-- Dùng CSS Grid để chia 2 cột -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    
+                    <!-- DÒNG 1: Tọa độ Chữ -->
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <div class="control-header"><label>Lề Ngang (X):</label> <span class="val-display" id="val-posX">4%</span></div>
+                        <input type="range" id="posX" min="0" max="95" value="4">
+                    </div>
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <div class="control-header"><label>Lề Dọc (Y):</label> <span class="val-display" id="val-posY">75%</span></div>
+                        <input type="range" id="posY" min="0" max="95" value="75">
+                    </div>
+
+                    <!-- DÒNG 2: Tọa độ Logo -->
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <div class="control-header"><label>Logo Ngang:</label> <span class="val-display" id="val-logoX">77%</span></div>
+                        <input type="range" id="logoX" min="0" max="95" value="77">
+                    </div>
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <div class="control-header"><label>Logo Dọc:</label> <span class="val-display" id="val-logoY">92%</span></div>
+                        <input type="range" id="logoY" min="0" max="95" value="92">
+                    </div>
+
+                    <!-- DÒNG 3: Kích thước -->
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <div class="control-header"><label>Size Chữ:</label> <span class="val-display" id="val-sizeMain">11%</span></div>
+                        <input type="range" id="sizeMain" min="2" max="25" value="11">
+                    </div>
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <div class="control-header"><label>Size Logo:</label> <span class="val-display" id="val-sizeLogo">4%</span></div>
+                        <input type="range" id="sizeLogo" min="2" max="25" value="4">
+                    </div>
+
+                </div>
+
+                <div style="display:none;">
+                    <input type="range" id="shadowOpacity" value="70">
+                    <input type="range" id="shadowSize" value="4">
+                </div>
+            </div>
+        </div>
+
+        <button class="download-btn" id="downloadBtn">⬇️ Lưu Ảnh</button>
+    </div>
+
+    <!-- MENU ĐÁY -->
+    <div id="bottomMenu">
+        <!-- Đã xóa khối header chứa chữ Timemark Studio và chuyển ổ khóa lên Logo -->
+        
+        <div class="action-grid">
+            <button class="btn btn-orange" id="startCameraBtn">📸 Cam Web</button>
+            <label class="btn btn-dark">
+                📱 Cam Gốc
+                <input type="file" id="nativeCameraInput" accept="image/*" capture="environment">
+            </label>
+            
+            <!-- Đã thêm id 'galleryBtnWrapper' và style='display:none;' để ẩn đi -->
+            <label class="btn btn-dark btn-full" id="galleryBtnWrapper" style="display: none;">
+                🖼️ Thư Viện
+                <input type="file" id="galleryInput" accept="image/*">
+            </label>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW fail: ', err));
+            });
+        }
+    </script>
+
+    <script>
+const _0x242d36=_0x4e02;(function(_0x2d891,_0x17bebd){const _0x30f0c9=_0x4e02,_0x5e49f5=_0x2d891();while(!![]){try{const _0x54a43c=parseInt(_0x30f0c9(0x218))/0x1+-parseInt(_0x30f0c9(0x1cc))/0x2+parseInt(_0x30f0c9(0x296))/0x3+-parseInt(_0x30f0c9(0x272))/0x4*(parseInt(_0x30f0c9(0x20b))/0x5)+parseInt(_0x30f0c9(0x1bc))/0x6*(-parseInt(_0x30f0c9(0x28b))/0x7)+parseInt(_0x30f0c9(0x1f1))/0x8*(-parseInt(_0x30f0c9(0x244))/0x9)+parseInt(_0x30f0c9(0x271))/0xa;if(_0x54a43c===_0x17bebd)break;else _0x5e49f5['push'](_0x5e49f5['shift']());}catch(_0x15f603){_0x5e49f5['push'](_0x5e49f5['shift']());}}}(_0x5a30,0x948bc));const bottomMenu=document['getElementById'](_0x242d36(0x293)),editorWorkspace=document[_0x242d36(0x28d)](_0x242d36(0x1cb)),canvas=document[_0x242d36(0x28d)](_0x242d36(0x1d7)),ctx=canvas['getContext']('2d'),cameraContainer=document['getElementById'](_0x242d36(0x20e)),videoFeed=document[_0x242d36(0x28d)](_0x242d36(0x1fe)),captureBtn=document[_0x242d36(0x28d)](_0x242d36(0x2ba)),startCameraBtn=document[_0x242d36(0x28d)](_0x242d36(0x24a)),closeCameraBtn=document[_0x242d36(0x28d)](_0x242d36(0x1e7)),nativeCameraInput=document[_0x242d36(0x28d)](_0x242d36(0x1e0)),galleryInput=document[_0x242d36(0x28d)](_0x242d36(0x287));window[_0x242d36(0x1d6)]('load',()=>{const _0x14f4dc=_0x242d36,_0x34cbdf=document[_0x14f4dc(0x28d)]('dashGpsStatus'),_0x453928=document[_0x14f4dc(0x28d)](_0x14f4dc(0x293));if(_0x453928)_0x453928[_0x14f4dc(0x1e5)][_0x14f4dc(0x2d2)]='10';if(navigator['geolocation'])navigator['geolocation']['getCurrentPosition'](_0x22d6dd=>{const _0x431845=_0x14f4dc;if(_0x34cbdf){const _0x4d6ddc=Math[_0x431845(0x2b4)](_0x22d6dd[_0x431845(0x292)]['accuracy']);_0x34cbdf['innerHTML']='✅\x20Sẵn\x20sàng\x20(Sai\x20số:\x20'+_0x4d6ddc+'m)',_0x34cbdf['style'][_0x431845(0x224)]=_0x431845(0x2a4);}},_0x573ff2=>{const _0x33b712=_0x14f4dc;_0x34cbdf&&(_0x34cbdf[_0x33b712(0x2b0)]='❌\x20Hãy\x20bật\x20GPS\x20&\x20Tải\x20lại',_0x34cbdf[_0x33b712(0x1e5)][_0x33b712(0x224)]=_0x33b712(0x284)),alert(_0x33b712(0x2bb));},{'enableHighAccuracy':!![],'timeout':0x2710,'maximumAge':0x0});else{if(_0x34cbdf)_0x34cbdf[_0x14f4dc(0x2b0)]=_0x14f4dc(0x1be);}});const hideDashboard=()=>{const _0x4f7b41=_0x242d36,_0x278920=document[_0x4f7b41(0x28d)](_0x4f7b41(0x1eb));if(_0x278920)_0x278920[_0x4f7b41(0x1e5)][_0x4f7b41(0x262)]=_0x4f7b41(0x2ae);};startCameraBtn[_0x242d36(0x1d6)]('click',hideDashboard),nativeCameraInput['addEventListener'](_0x242d36(0x24d),hideDashboard),galleryInput['addEventListener']('change',hideDashboard);const secretTrigger=document[_0x242d36(0x28d)](_0x242d36(0x27c)),galleryBtnWrapper=document[_0x242d36(0x28d)](_0x242d36(0x223));function _0x5a30(){const _0x4e04b4=['Thứ\x20Hai','Ảnh\x20thường','16979830HGpoJt','2076SwNeUL','onload','#ffffff','fillRect','objectStore','Timemark\x20Image','🗺️\x20Mở\x20Map','https://www.google.com/maps','Đã\x20lấy\x20tọa\x20độ\x20GPS','measureText','secretTrigger','getAll','./logo_npt.png','createObjectURL','min','Máy\x20cắt\x20231','bold\x20','readwrite','#e74c3c','adminTimeInput','getTracks','galleryInput','online','undefined','⚠️\x20LỖI\x20ĐỊNH\x20VỊ:\x20','8134zvUorr','srcObject','getElementById','&addressdetails=1&accept-language=vi','src','max','payload','coords','bottomMenu','json','canShare','596391oDRtLR','⏳\x20Đang\x20quét...','naturalHeight','toggleSettingsBtn','📸\x20Cam\x20Web\x20⚠️','downloadBtn','Máy\x20cắt\x20K504','address','serverTimestamp','hamlet','visible','Máy\x20cắt\x20232','Máy\x20cắt\x20KKT504','padStart','#2ecc71','❌\x20Vui\x20lòng\x20chọn\x20một\x20Trạm\x20cụ\x20thể\x20trước\x20khi\x20bấm\x20Lưu\x20Thiết\x20Bị!','hchien83','📸\x20Cam\x20Web\x20<span\x20style=\x22color:#2ecc71\x22>✔</span>','getTime','Trình\x20duyệt\x20của\x20điện\x20thoại\x20không\x20hỗ\x20trợ\x20GPS.','href','getUserMedia','drawImage','Máy\x20cắt\x20571','none','textAlign','innerHTML','getMonth','Đã\x20lưu\x20tạm\x201\x20ảnh\x20vào\x20kho\x20Offline.','add','round','revokeObjectURL','posX','❌\x20Ảnh\x20không\x20có\x20GPS','Dao\x20cách\x20ly\x20231-1','download','captureBtn','⚠️\x20CẢNH\x20BÁO\x20BẢO\x20MẬT:\x0a\x0aKhông\x20tìm\x20thấy\x20tín\x20hiệu\x20định\x20vị!\x20Vui\x20lòng\x20vuốt\x20màn\x20hình\x20xuống,\x20BẬT\x20ĐỊNH\x20VỊ\x20(GPS)\x20và\x20TẢI\x20LẠI\x20TRANG\x20để\x20hệ\x20thống\x20hoạt\x20động\x20chính\x20xác.','URL','locationInput','dropdownToggleBtn','forEach','latitude','removeChild','#333','image/jpeg','white','performanceMark','pendingUploads','padding','logoY','flex','\x0a-\x20TB:\x20','adminGodModePanel','logoX','library','openMapBtn','⚙️\x20Hiển\x20thị\x20Căn\x20chỉnh\x20Thủ\x20công','val-','getDay','zIndex','onsuccess','\x20Tháng\x20','secureTime','Không\x20tải\x20được\x20tên\x20đường.\x20Sẽ\x20dùng\x20tọa\x20độ\x20thô.','738oHOfds','log','⚠️\x20Không\x20hỗ\x20trợ\x20GPS','stop','visibilitychange','videoWidth','backgroundColor','Lỗi\x20khi\x20đồng\x20bộ\x20bù:','font','share','background','getMinutes','Chủ\x20Nhật','files','stringify','editorWorkspace','1210786nzUTKX','#f39c12','userAgent','click','\x22\x20vào\x20hồ\x20sơ\x20của\x20','Quá\x20thời\x20gian\x20chờ\x20định\x20vị\x20(Timeout).\x20Hãy\x20thử\x20bấm\x20lại!','fillText','px\x20sans-serif','city','Đã\x20đẩy\x20thẳng\x20lên\x20Cloud:','addEventListener','photoCanvas','webcam','shadowSize','geolocation','catch','⚙️\x20Ẩn\x20Căn\x20chỉnh\x20Thủ\x20công','retakeBtn','✅\x20Đã\x20mở\x20khóa\x20Quyền\x20Admin\x20Tối\x20Cao!','Phát\x20hiện\x20mạng!\x20Đang\x20đồng\x20bộ\x20','nativeCameraInput','parse','MSStream','Thứ\x20Năm','posY','style','rgba(0,\x200,\x200,\x20','closeCameraBtn','classList','keys','target','homeDashboard','\x20ảnh\x20tồn\x20đọng...','black','isVerified','borderBottom','remove','16BkTtrf','adminGPSInput','then','mainToggleIcon','floor','✅\x20Đã\x20lưu\x20Máy\x20&\x20Cloud!','✅\x20Đã\x20lưu\x20Máy\x20(Chờ\x20mạng\x20để\x20lên\x20Cloud)','innerText','mediaDevices','\x20[⚠️\x20Giờ\x20Máy]','continuous','top','includes','videoFeed','warn','mainEditPanel','visibilityState','videoHeight','block','transaction','sizeMain','[BẰNG\x20CHỨNG\x20GỐC]\x0a-\x20Trạm:\x20','getFullYear','trim','clearRect','transparent','3455BdWQkz','toFixed','open','cameraContainer','Máy\x20cắt\x20342','center','preventDefault','gps','Máy\x20cắt\x20200','Vui\x20lòng\x20gõ\x20tên\x20thiết\x20bị\x20trước\x20khi\x20lưu!','Chưa\x20nhập','objectStoreNames','value','33770VDCdlU','shadowBlur','test','exactGPS','option','environment','push','village','shadowOpacity','length','#3498db','galleryBtnWrapper','color','https://maps.google.com/?q=','load','result','sizeLogo','Bình\x20ắc\x20quy','stationSelect','Máy\x20cắt\x20221','appendChild','Máy\x20cắt\x20341','✅\x20Đã\x20hút\x20GPS','normal\x20','getHours','height','pointer','code','createObjectStore','getItem','width','_blank','naturalWidth','#444','longitude','&lon=','\x20[✔\x20Chuẩn\x20QT]','advancedSettings','delete','replace','Đã\x20lưu\x20thành\x20công\x20\x22','https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh','Máy\x20cắt\x20573','canvas-shrink','968211ICXBgf','Thứ\x20Tư','getLocationBtn','14px','readonly','onupgradeneeded','startCameraBtn','datetime','createElement','change','quarter','onLine','shadowColor','contains','toDataURL','nativecam','Không\x20có\x20tín\x20hiệu\x20GPS\x20(Hãy\x20ra\x20chỗ\x20thoáng\x20hơn).','customTextInput','customDropdownList','fillStyle','mouseover','input','❌\x20Lỗi\x20đọc\x20ảnh','borderColor','now','body','⏳\x20Đang\x20dò\x20GPS...','myCustomStationData','mainToggleBtn','Studio','display','toBlob','mouseout','Chưa\x20cấp\x20quyền\x20GPS\x20hoặc\x20mất\x20tín\x20hiệu','Mạng\x20chập\x20chờn,\x20đẩy\x20vào\x20kho\x20offline:','📍\x20Định\x20vị\x20lại','#f1c40f','text/plain;charset=utf-8','saveDeviceBtn','getCurrentPosition','Máy\x20biến\x20áp\x20AT2','https://nominatim.openstreetmap.org/reverse?format=json&lat=','getDate'];_0x5a30=function(){return _0x4e04b4;};return _0x5a30();}let tapCount=0x0,tapTimer;secretTrigger[_0x242d36(0x1d6)](_0x242d36(0x1cf),()=>{const _0x4f3437=_0x242d36;tapCount++,clearTimeout(tapTimer);if(tapCount===0x5){tapCount=0x0;const _0x4c3b20=prompt('🔒\x20Chế\x20độ\x20Admin.\x20Nhập\x20mật\x20khẩu:');if(_0x4c3b20===_0x4f3437(0x2a6)){galleryBtnWrapper[_0x4f3437(0x1e5)][_0x4f3437(0x262)]='inline-flex';const _0x143c6b=document[_0x4f3437(0x28d)](_0x4f3437(0x2cb));if(_0x143c6b)_0x143c6b['style'][_0x4f3437(0x262)]=_0x4f3437(0x203);alert(_0x4f3437(0x1de));}else _0x4c3b20!==null&&alert('❌\x20Sai\x20mật\x20khẩu!');}tapTimer=setTimeout(()=>{tapCount=0x0;},0x5dc);});let currentStream=null,lastUsedMode='',img=new Image();const evnLogo=new Image();evnLogo[_0x242d36(0x28f)]=_0x242d36(0x27e),evnLogo['onload']=()=>{const _0x338987=_0x242d36;if(img[_0x338987(0x28f)])drawWatermark();};const toggleSettingsBtn=document[_0x242d36(0x28d)](_0x242d36(0x299)),advancedSettings=document[_0x242d36(0x28d)](_0x242d36(0x23d));toggleSettingsBtn[_0x242d36(0x1d6)](_0x242d36(0x1cf),()=>{const _0x3af7f2=_0x242d36;advancedSettings['style'][_0x3af7f2(0x262)]==='none'?(advancedSettings[_0x3af7f2(0x1e5)]['display']=_0x3af7f2(0x203),toggleSettingsBtn[_0x3af7f2(0x2b0)]=_0x3af7f2(0x1dc)):(advancedSettings[_0x3af7f2(0x1e5)][_0x3af7f2(0x262)]=_0x3af7f2(0x2ae),toggleSettingsBtn['innerHTML']=_0x3af7f2(0x2cf));});const mainToggleBtn=document[_0x242d36(0x28d)](_0x242d36(0x260)),mainEditPanel=document['getElementById'](_0x242d36(0x200)),mainToggleIcon=document['getElementById'](_0x242d36(0x1f4));mainToggleBtn[_0x242d36(0x1d6)](_0x242d36(0x1cf),()=>{const _0x2f4641=_0x242d36;mainEditPanel[_0x2f4641(0x1e5)][_0x2f4641(0x262)]==='none'?(mainEditPanel['style'][_0x2f4641(0x262)]=_0x2f4641(0x203),mainToggleIcon['innerText']='▲',mainToggleBtn[_0x2f4641(0x1e5)][_0x2f4641(0x1c2)]=_0x2f4641(0x2c2),canvas[_0x2f4641(0x1e8)][_0x2f4641(0x2b3)](_0x2f4641(0x243))):(mainEditPanel[_0x2f4641(0x1e5)][_0x2f4641(0x262)]=_0x2f4641(0x2ae),mainToggleIcon[_0x2f4641(0x1f8)]='▼',mainToggleBtn[_0x2f4641(0x1e5)][_0x2f4641(0x1c2)]='var(--bg-panel)',canvas[_0x2f4641(0x1e8)][_0x2f4641(0x1f0)](_0x2f4641(0x243)));});function stopCameraStream(){const _0x3bc77a=_0x242d36;currentStream&&(currentStream[_0x3bc77a(0x286)]()[_0x3bc77a(0x2bf)](_0x497c53=>_0x497c53[_0x3bc77a(0x1bf)]()),currentStream=null),cameraContainer['style'][_0x3bc77a(0x262)]=_0x3bc77a(0x2ae);}function resetToFreshState(){const _0x45c260=_0x242d36;stopCameraStream(),canvas[_0x45c260(0x1e5)][_0x45c260(0x262)]=_0x45c260(0x2ae),editorWorkspace[_0x45c260(0x1e5)]['display']=_0x45c260(0x2ae),advancedSettings[_0x45c260(0x1e5)][_0x45c260(0x262)]=_0x45c260(0x2ae),toggleSettingsBtn[_0x45c260(0x2b0)]=_0x45c260(0x2cf),document[_0x45c260(0x28d)](_0x45c260(0x200))[_0x45c260(0x1e5)][_0x45c260(0x262)]=_0x45c260(0x2ae),document[_0x45c260(0x28d)](_0x45c260(0x1f4))[_0x45c260(0x1f8)]='▼',canvas[_0x45c260(0x1e8)][_0x45c260(0x1f0)](_0x45c260(0x243));}document[_0x242d36(0x28d)](_0x242d36(0x1dd))['addEventListener'](_0x242d36(0x1cf),()=>{const _0x1f865f=_0x242d36;resetToFreshState(),bottomMenu[_0x1f865f(0x1e5)][_0x1f865f(0x262)]=_0x1f865f(0x203),lastUsedMode===_0x1f865f(0x1d8)&&startCameraBtn['click']();}),startCameraBtn['addEventListener'](_0x242d36(0x1cf),async()=>{const _0x1c8e7b=_0x242d36;lastUsedMode='webcam',resetToFreshState();try{currentStream=await navigator['mediaDevices'][_0x1c8e7b(0x2ab)]({'video':{'facingMode':_0x1c8e7b(0x21d),'width':{'ideal':0xf00},'height':{'ideal':0x870},'advanced':[{'focusMode':_0x1c8e7b(0x1fb)}]}}),videoFeed['srcObject']=currentStream,bottomMenu[_0x1c8e7b(0x1e5)]['display']=_0x1c8e7b(0x2ae),cameraContainer['style']['display']=_0x1c8e7b(0x203);}catch(_0x282bac){try{currentStream=await navigator[_0x1c8e7b(0x1f9)]['getUserMedia']({'video':{'facingMode':_0x1c8e7b(0x21d)}}),videoFeed[_0x1c8e7b(0x28c)]=currentStream,bottomMenu[_0x1c8e7b(0x1e5)]['display']=_0x1c8e7b(0x2ae),cameraContainer[_0x1c8e7b(0x1e5)][_0x1c8e7b(0x262)]=_0x1c8e7b(0x203);}catch(_0x488dec){alert('Không\x20thể\x20mở\x20Camera.\x20Vui\x20lòng\x20cấp\x20quyền\x20máy\x20ảnh!'),bottomMenu[_0x1c8e7b(0x1e5)][_0x1c8e7b(0x262)]='block';}}}),closeCameraBtn['addEventListener'](_0x242d36(0x1cf),()=>{const _0x270239=_0x242d36;resetToFreshState(),bottomMenu[_0x270239(0x1e5)][_0x270239(0x262)]=_0x270239(0x203);}),captureBtn['addEventListener'](_0x242d36(0x1cf),()=>{const _0x46339e=_0x242d36,_0x156a82=0x9c4;let _0x55695a=videoFeed[_0x46339e(0x1c1)],_0x53ab99=videoFeed[_0x46339e(0x202)];if(_0x55695a>_0x156a82||_0x53ab99>_0x156a82){const _0x440799=Math[_0x46339e(0x280)](_0x156a82/_0x55695a,_0x156a82/_0x53ab99);_0x55695a=Math[_0x46339e(0x2b4)](_0x55695a*_0x440799),_0x53ab99=Math[_0x46339e(0x2b4)](_0x53ab99*_0x440799);}canvas[_0x46339e(0x236)]=_0x55695a,canvas['height']=_0x53ab99,ctx[_0x46339e(0x2ac)](videoFeed,0x0,0x0,_0x55695a,_0x53ab99),img[_0x46339e(0x273)]=function(){const _0x39a85d=_0x46339e;cameraContainer[_0x39a85d(0x1e5)][_0x39a85d(0x262)]='none',canvas[_0x39a85d(0x1e5)][_0x39a85d(0x262)]=_0x39a85d(0x203),editorWorkspace[_0x39a85d(0x1e5)]['display']=_0x39a85d(0x2c9),drawWatermark();},img[_0x46339e(0x28f)]=canvas[_0x46339e(0x252)](_0x46339e(0x2c3)),stopCameraStream();});function handleFileUpload(_0x4a1af9,_0x2372f4){const _0x2c0931=_0x242d36,_0x566808=_0x4a1af9['target'][_0x2c0931(0x1c9)][0x0];if(!_0x566808)return;lastUsedMode=_0x2372f4,resetToFreshState();if(_0x2372f4==='library'){if(typeof exifr!==_0x2c0931(0x289)){const _0x28ab06=document[_0x2c0931(0x28d)](_0x2c0931(0x2ce)),_0x533f4f=_0x2c0931(0x278);_0x28ab06&&(_0x28ab06['innerText']=_0x2c0931(0x297),_0x28ab06[_0x2c0931(0x1e5)][_0x2c0931(0x1c6)]=_0x2c0931(0x1cd)),exifr[_0x2c0931(0x212)](_0x566808)[_0x2c0931(0x1f3)](_0x5054af=>{const _0x2246b4=_0x2c0931;if(_0x5054af){const _0x3fe7b3=_0x5054af[_0x2246b4(0x2c0)]['toFixed'](0x5)+',\x20'+_0x5054af[_0x2246b4(0x23a)][_0x2246b4(0x20c)](0x5),_0x5b87af=document[_0x2246b4(0x28d)]('adminGPSInput');if(_0x5b87af)_0x5b87af[_0x2246b4(0x217)]=_0x3fe7b3;_0x28ab06&&(_0x28ab06['innerText']=_0x2246b4(0x22e),_0x28ab06[_0x2246b4(0x1e5)][_0x2246b4(0x1c6)]='#2ecc71',setTimeout(()=>{const _0x269e2d=_0x2246b4;_0x28ab06['innerText']=_0x533f4f,_0x28ab06['style'][_0x269e2d(0x1c6)]=_0x269e2d(0x222);},0xfa0)),drawWatermark();}else _0x28ab06&&(_0x28ab06[_0x2246b4(0x1f8)]=_0x2246b4(0x2b7),_0x28ab06[_0x2246b4(0x1e5)]['background']=_0x2246b4(0x284),setTimeout(()=>{const _0x1bcc34=_0x2246b4;_0x28ab06['innerText']=_0x533f4f,_0x28ab06[_0x1bcc34(0x1e5)][_0x1bcc34(0x1c6)]=_0x1bcc34(0x222);},0xfa0));})[_0x2c0931(0x1db)](_0x1202d8=>{const _0x4a29be=_0x2c0931;_0x28ab06&&(_0x28ab06[_0x4a29be(0x1f8)]=_0x4a29be(0x25a),_0x28ab06[_0x4a29be(0x1e5)][_0x4a29be(0x1c6)]=_0x4a29be(0x284),setTimeout(()=>{const _0x4f70b6=_0x4a29be;_0x28ab06['innerText']=_0x533f4f,_0x28ab06[_0x4f70b6(0x1e5)][_0x4f70b6(0x1c6)]=_0x4f70b6(0x222);},0xfa0));});}else console[_0x2c0931(0x1ff)]('⚠️\x20Chưa\x20tải\x20được\x20thư\x20viện\x20exifr.');}const _0x26d2a6=URL[_0x2c0931(0x27f)](_0x566808);img['onload']=function(){const _0x1aaa59=_0x2c0931;let _0x5356a8=img[_0x1aaa59(0x238)]||img['width'],_0x3d2b81=img[_0x1aaa59(0x298)]||img[_0x1aaa59(0x231)];const _0x6419fa=0x9c4;if(_0x5356a8>_0x6419fa||_0x3d2b81>_0x6419fa){const _0x43039e=Math[_0x1aaa59(0x280)](_0x6419fa/_0x5356a8,_0x6419fa/_0x3d2b81);_0x5356a8=Math[_0x1aaa59(0x2b4)](_0x5356a8*_0x43039e),_0x3d2b81=Math[_0x1aaa59(0x2b4)](_0x3d2b81*_0x43039e);}canvas[_0x1aaa59(0x236)]=_0x5356a8,canvas[_0x1aaa59(0x231)]=_0x3d2b81,bottomMenu[_0x1aaa59(0x1e5)][_0x1aaa59(0x262)]=_0x1aaa59(0x2ae),canvas[_0x1aaa59(0x1e5)]['display']=_0x1aaa59(0x203),editorWorkspace[_0x1aaa59(0x1e5)][_0x1aaa59(0x262)]=_0x1aaa59(0x2c9),drawWatermark(),URL[_0x1aaa59(0x2b5)](_0x26d2a6);},img[_0x2c0931(0x28f)]=_0x26d2a6,_0x4a1af9[_0x2c0931(0x1ea)][_0x2c0931(0x217)]='';}nativeCameraInput[_0x242d36(0x1d6)](_0x242d36(0x24d),_0x76f002=>handleFileUpload(_0x76f002,_0x242d36(0x253))),galleryInput[_0x242d36(0x1d6)](_0x242d36(0x24d),_0x5c9918=>handleFileUpload(_0x5c9918,_0x242d36(0x2cd)));const locationInput=document[_0x242d36(0x28d)](_0x242d36(0x2bd)),stationSelect=document[_0x242d36(0x28d)](_0x242d36(0x22a)),customTextInput=document[_0x242d36(0x28d)](_0x242d36(0x255)),saveDeviceBtn=document[_0x242d36(0x28d)](_0x242d36(0x26a)),dropdownToggleBtn=document[_0x242d36(0x28d)](_0x242d36(0x2be)),customDropdownList=document[_0x242d36(0x28d)](_0x242d36(0x256)),hardcodedData={'Trạm\x20500kV\x20Hòa\x20Bình':[_0x242d36(0x22b),_0x242d36(0x213),'Máy\x20cắt\x20222',_0x242d36(0x22d),_0x242d36(0x20f),_0x242d36(0x2ad),'Máy\x20cắt\x20572',_0x242d36(0x242),'Máy\x20cắt\x20574',_0x242d36(0x29c),_0x242d36(0x2a2)],'Trạm\x20220kV\x20(Mẫu)':[_0x242d36(0x281),_0x242d36(0x2a1),_0x242d36(0x2b8),_0x242d36(0x26c)],'Khác\x20(Thiết\x20bị\x20chung)':['Tủ\x20điều\x20khiển\x20bảo\x20vệ','Rơ\x20le\x20F87',_0x242d36(0x229)]};function initStations(){const _0xb79fc6=_0x242d36;stationSelect[_0xb79fc6(0x2b0)]='';const _0x4732d=document['createElement']('option');_0x4732d['value']=_0xb79fc6(0x2ae),_0x4732d[_0xb79fc6(0x1f8)]='❌\x20Chế\x20độ\x20ảnh\x20thường',stationSelect['appendChild'](_0x4732d);const _0x292027=Object[_0xb79fc6(0x1e9)](hardcodedData);let _0x1903ab=JSON['parse'](localStorage[_0xb79fc6(0x235)](_0xb79fc6(0x25f)))||{};const _0x3228c9=Object['keys'](_0x1903ab),_0x5a10c1=[...new Set([..._0x292027,..._0x3228c9])];_0x5a10c1[_0xb79fc6(0x2bf)](_0x4c040b=>{const _0x816695=_0xb79fc6,_0x50b355=document[_0x816695(0x24c)](_0x816695(0x21c));_0x50b355[_0x816695(0x217)]=_0x4c040b,_0x50b355['innerText']=_0x4c040b,stationSelect[_0x816695(0x22c)](_0x50b355);}),stationSelect[_0xb79fc6(0x1d6)](_0xb79fc6(0x24d),loadDeviceList);}function loadDeviceList(){const _0x21959a=_0x242d36,_0x183ebd=stationSelect[_0x21959a(0x217)];if(!_0x183ebd)return;const _0x159ab6=hardcodedData[_0x183ebd]||[];let _0x15ab02=JSON[_0x21959a(0x1e1)](localStorage[_0x21959a(0x235)](_0x21959a(0x25f)))||{},_0x42ba6a=_0x15ab02[_0x183ebd]||[];const _0x1b054b=[...new Set([..._0x159ab6,..._0x42ba6a])];customDropdownList[_0x21959a(0x2b0)]='',_0x1b054b['forEach'](_0x30b9a4=>{const _0x156621=_0x21959a,_0x3b1de7=document[_0x156621(0x24c)]('li');_0x3b1de7['innerText']=_0x30b9a4,_0x3b1de7['style'][_0x156621(0x2c7)]='12px\x2015px',_0x3b1de7[_0x156621(0x1e5)][_0x156621(0x1ef)]='1px\x20solid\x20#444',_0x3b1de7['style'][_0x156621(0x224)]=_0x156621(0x2c4),_0x3b1de7['style']['cursor']=_0x156621(0x232),_0x3b1de7[_0x156621(0x1e5)]['fontSize']=_0x156621(0x247),_0x3b1de7[_0x156621(0x1d6)](_0x156621(0x258),()=>_0x3b1de7['style'][_0x156621(0x1c6)]=_0x156621(0x239)),_0x3b1de7[_0x156621(0x1d6)](_0x156621(0x264),()=>_0x3b1de7[_0x156621(0x1e5)][_0x156621(0x1c6)]=_0x156621(0x20a)),_0x3b1de7['addEventListener'](_0x156621(0x1cf),()=>{const _0x8d6615=_0x156621;customTextInput[_0x8d6615(0x217)]=_0x30b9a4,customDropdownList[_0x8d6615(0x1e5)][_0x8d6615(0x262)]=_0x8d6615(0x2ae),drawWatermark();}),customDropdownList['appendChild'](_0x3b1de7);}),customTextInput[_0x21959a(0x217)]='',drawWatermark();}dropdownToggleBtn[_0x242d36(0x1d6)](_0x242d36(0x1cf),_0x539140=>{const _0x20c8c3=_0x242d36;_0x539140['preventDefault'](),customDropdownList[_0x20c8c3(0x1e5)][_0x20c8c3(0x262)]=customDropdownList[_0x20c8c3(0x1e5)][_0x20c8c3(0x262)]==='none'?_0x20c8c3(0x203):_0x20c8c3(0x2ae);}),document[_0x242d36(0x1d6)](_0x242d36(0x1cf),_0x53e306=>{const _0x3a886d=_0x242d36;!customTextInput['contains'](_0x53e306[_0x3a886d(0x1ea)])&&!dropdownToggleBtn[_0x3a886d(0x251)](_0x53e306[_0x3a886d(0x1ea)])&&!customDropdownList[_0x3a886d(0x251)](_0x53e306[_0x3a886d(0x1ea)])&&(customDropdownList['style'][_0x3a886d(0x262)]='none');}),saveDeviceBtn[_0x242d36(0x1d6)](_0x242d36(0x1cf),()=>{const _0x4b1790=_0x242d36,_0x148cfc=customTextInput[_0x4b1790(0x217)]['trim'](),_0x5c882a=stationSelect[_0x4b1790(0x217)];if(_0x5c882a===_0x4b1790(0x2ae)){alert(_0x4b1790(0x2a5));return;}if(_0x148cfc===''){alert(_0x4b1790(0x214));return;}let _0x197d0f=JSON[_0x4b1790(0x1e1)](localStorage['getItem'](_0x4b1790(0x25f)))||{};!_0x197d0f[_0x5c882a]&&(_0x197d0f[_0x5c882a]=[]);const _0x5d8721=hardcodedData[_0x5c882a]||[];_0x5d8721[_0x4b1790(0x1fd)](_0x148cfc)||_0x197d0f[_0x5c882a][_0x4b1790(0x1fd)](_0x148cfc)?alert('Thiết\x20bị\x20này\x20đã\x20có\x20sẵn\x20trong\x20danh\x20sách\x20của\x20'+_0x5c882a+'!'):(_0x197d0f[_0x5c882a][_0x4b1790(0x21e)](_0x148cfc),localStorage['setItem'](_0x4b1790(0x25f),JSON[_0x4b1790(0x1ca)](_0x197d0f)),loadDeviceList(),alert(_0x4b1790(0x240)+_0x148cfc+_0x4b1790(0x1d0)+_0x5c882a+'!'));}),initStations(),loadDeviceList();const getLocationBtn=document[_0x242d36(0x28d)](_0x242d36(0x246));function fetchLocation(_0x35bd7f=![]){const _0x47f790=_0x242d36;if(_0x47f790(0x1da)in navigator)getLocationBtn[_0x47f790(0x1f8)]=_0x47f790(0x25e),getLocationBtn[_0x47f790(0x1e5)][_0x47f790(0x224)]=_0x47f790(0x2c4),navigator[_0x47f790(0x1da)][_0x47f790(0x26b)](async function(_0x6f409a){const _0x52dddb=_0x47f790,_0x3920fa=_0x6f409a[_0x52dddb(0x292)][_0x52dddb(0x2c0)],_0x154501=_0x6f409a[_0x52dddb(0x292)]['longitude'];window[_0x52dddb(0x21b)]=_0x3920fa[_0x52dddb(0x20c)](0x5)+',\x20'+_0x154501[_0x52dddb(0x20c)](0x5);try{const _0x5bea60=await fetch(_0x52dddb(0x26d)+_0x3920fa+_0x52dddb(0x23b)+_0x154501+_0x52dddb(0x28e)),_0x44a594=await _0x5bea60[_0x52dddb(0x294)]();if(_0x44a594&&_0x44a594[_0x52dddb(0x29d)]){const _0x7183a7=_0x44a594[_0x52dddb(0x29d)],_0xc4ae25=_0x7183a7['suburb']||_0x7183a7[_0x52dddb(0x21f)]||_0x7183a7[_0x52dddb(0x24e)]||_0x7183a7[_0x52dddb(0x29f)]||'',_0x3107d4=_0x7183a7['province']||_0x7183a7['state']||_0x7183a7[_0x52dddb(0x1d4)]||'';let _0x34859a='';_0xc4ae25&&_0x3107d4?_0x34859a=_0xc4ae25+',\x20'+_0x3107d4:_0x34859a=_0xc4ae25||_0x3107d4||_0x52dddb(0x27a),locationInput[_0x52dddb(0x217)]=_0x34859a,drawWatermark(),getLocationBtn[_0x52dddb(0x1f8)]='✅\x20Đã\x20định\x20vị',getLocationBtn['style']['color']='#27ae60',setTimeout(()=>{const _0x3ebdc2=_0x52dddb;getLocationBtn[_0x3ebdc2(0x1f8)]=_0x3ebdc2(0x267),getLocationBtn[_0x3ebdc2(0x1e5)][_0x3ebdc2(0x224)]='var(--primary)';},0xbb8);}}catch(_0x5c776f){if(_0x35bd7f)alert(_0x52dddb(0x1bb));locationInput['value']='GPS:\x20'+_0x3920fa[_0x52dddb(0x20c)](0x4)+',\x20'+_0x154501[_0x52dddb(0x20c)](0x4),drawWatermark(),getLocationBtn[_0x52dddb(0x1f8)]=_0x52dddb(0x267);}},function(_0x3e8773){const _0x487611=_0x47f790;if(_0x35bd7f){let _0x33631d=_0x487611(0x28a);if(_0x3e8773['code']===0x1)_0x33631d+='Apple\x20đang\x20chặn\x20quyền\x20GPS.\x20Hãy\x20xóa\x20icon\x20ngoài\x20MH\x20chính,\x20xóa\x20lịch\x20sử\x20Safari\x20và\x20thêm\x20lại!';else{if(_0x3e8773['code']===0x2)_0x33631d+=_0x487611(0x254);else{if(_0x3e8773[_0x487611(0x233)]===0x3)_0x33631d+=_0x487611(0x1d1);else _0x33631d+=_0x3e8773['message'];}}alert(_0x33631d);}getLocationBtn[_0x487611(0x1f8)]=_0x487611(0x267);},{'enableHighAccuracy':!![],'timeout':0x4e20,'maximumAge':0x0});else{if(_0x35bd7f)alert(_0x47f790(0x2a9));}}getLocationBtn[_0x242d36(0x1d6)](_0x242d36(0x1cf),()=>fetchLocation(!![])),window[_0x242d36(0x1d6)](_0x242d36(0x226),()=>fetchLocation(![])),document['getElementById'](_0x242d36(0x24a))[_0x242d36(0x1d6)](_0x242d36(0x1cf),()=>fetchLocation(![])),document[_0x242d36(0x28d)]('nativeCameraInput')[_0x242d36(0x1d6)](_0x242d36(0x1cf),()=>fetchLocation(![])),locationInput[_0x242d36(0x1d6)](_0x242d36(0x259),drawWatermark),customTextInput[_0x242d36(0x1d6)](_0x242d36(0x259),drawWatermark),document[_0x242d36(0x28d)](_0x242d36(0x285))[_0x242d36(0x1d6)](_0x242d36(0x259),drawWatermark),document[_0x242d36(0x28d)](_0x242d36(0x1f2))[_0x242d36(0x1d6)]('input',drawWatermark);const inputs=[_0x242d36(0x205),_0x242d36(0x2b6),_0x242d36(0x1e4),_0x242d36(0x228),_0x242d36(0x2cc),_0x242d36(0x2c8),_0x242d36(0x220),'shadowSize'];inputs[_0x242d36(0x2bf)](_0x20f023=>{const _0x4cd8fb=_0x242d36,_0x388e0c=document[_0x4cd8fb(0x28d)](_0x20f023);_0x388e0c&&_0x388e0c['addEventListener']('input',_0x453c5c=>{const _0x30da1e=_0x4cd8fb,_0x545d90=document[_0x30da1e(0x28d)](_0x30da1e(0x2d0)+_0x20f023);if(_0x545d90)_0x545d90['innerText']=_0x453c5c['target']['value']+'%';drawWatermark();});}),window['secureTime']={'serverTimestamp':null,'performanceMark':null,'isVerified':![]};async function syncNetworkTime(){const _0x1cf221=_0x242d36;try{let _0x17c096;try{const _0x58b272=await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');if(!_0x58b272['ok'])throw new Error();const _0x475b00=await _0x58b272['json']();_0x17c096=_0x475b00['dateTime'];}catch(_0x2471f9){const _0x4bd54c=await fetch(_0x1cf221(0x241)),_0x63662d=await _0x4bd54c['json']();_0x17c096=_0x63662d[_0x1cf221(0x24b)];}window[_0x1cf221(0x2d5)]['serverTimestamp']=new Date(_0x17c096)[_0x1cf221(0x2a8)](),window['secureTime']['performanceMark']=performance[_0x1cf221(0x25c)](),window[_0x1cf221(0x2d5)][_0x1cf221(0x1ee)]=!![];const _0x5b36f9=document[_0x1cf221(0x28d)](_0x1cf221(0x24a));_0x5b36f9&&(_0x5b36f9[_0x1cf221(0x2b0)]=_0x1cf221(0x2a7),_0x5b36f9[_0x1cf221(0x1e5)][_0x1cf221(0x25b)]=_0x1cf221(0x2a4));}catch(_0x26ba9e){window[_0x1cf221(0x2d5)][_0x1cf221(0x1ee)]=![];const _0x5a3fd9=document[_0x1cf221(0x28d)](_0x1cf221(0x24a));if(_0x5a3fd9)_0x5a3fd9[_0x1cf221(0x2b0)]=_0x1cf221(0x29a);}}window[_0x242d36(0x1d6)](_0x242d36(0x226),syncNetworkTime),document[_0x242d36(0x1d6)](_0x242d36(0x1c0),()=>{const _0x4a2c5d=_0x242d36;if(document[_0x4a2c5d(0x201)]===_0x4a2c5d(0x2a0))syncNetworkTime();}),document[_0x242d36(0x28d)](_0x242d36(0x24a))[_0x242d36(0x1d6)]('click',syncNetworkTime),document[_0x242d36(0x28d)](_0x242d36(0x1e0))[_0x242d36(0x1d6)]('click',syncNetworkTime);function drawWatermark(){const _0x4da533=_0x242d36;if(!img[_0x4da533(0x28f)])return;ctx[_0x4da533(0x209)](0x0,0x0,canvas[_0x4da533(0x236)],canvas[_0x4da533(0x231)]),ctx['drawImage'](img,0x0,0x0,canvas[_0x4da533(0x236)],canvas['height']);const _0x4b4285=_0x442622=>document[_0x4da533(0x28d)](_0x442622)[_0x4da533(0x217)],_0x58bcd4=parseInt(_0x4b4285(_0x4da533(0x1d9))),_0x1892f0=parseInt(_0x4b4285(_0x4da533(0x220)))/0x64;ctx[_0x4da533(0x250)]=_0x4da533(0x1e6)+_0x1892f0+')',ctx[_0x4da533(0x219)]=_0x58bcd4,ctx['shadowOffsetX']=_0x58bcd4/1.5,ctx['shadowOffsetY']=_0x58bcd4/1.5;const _0x2be05d=Math['min'](canvas[_0x4da533(0x236)],canvas[_0x4da533(0x231)]),_0x3bb817=Math[_0x4da533(0x1f5)](_0x2be05d*(_0x4b4285(_0x4da533(0x205))/0x64)),_0x65bef8=canvas[_0x4da533(0x236)]*(_0x4b4285(_0x4da533(0x2b6))/0x64);let _0x37ebe1=canvas[_0x4da533(0x231)]*(_0x4b4285('posY')/0x64)-_0x3bb817*0.3,_0x219dd6=_0x3bb817*1.2;if(locationInput['value'][_0x4da533(0x208)]()!=='')_0x219dd6+=_0x3bb817*0.4;if(window['exactGPS']&&window[_0x4da533(0x21b)]!=='')_0x219dd6+=_0x3bb817*0.4;const _0x5d3b4c=document[_0x4da533(0x28d)](_0x4da533(0x22a));_0x5d3b4c&&_0x5d3b4c['value']!==''&&_0x5d3b4c[_0x4da533(0x217)]!==_0x4da533(0x2ae)&&(_0x219dd6+=_0x3bb817*0.55);customTextInput[_0x4da533(0x217)]['trim']()!==''&&(_0x219dd6+=_0x3bb817*0.6);const _0x3cf37c=canvas[_0x4da533(0x231)]*0.98;_0x37ebe1+_0x219dd6>_0x3cf37c&&(_0x37ebe1=_0x3cf37c-_0x219dd6);let _0xaab656,_0x3ff317='';const _0x5cdf20=document['getElementById']('adminTimeInput');if(_0x5cdf20&&_0x5cdf20['value'])_0xaab656=new Date(_0x5cdf20[_0x4da533(0x217)]),_0x3ff317=_0x4da533(0x23c);else{if(window[_0x4da533(0x2d5)]&&window[_0x4da533(0x2d5)][_0x4da533(0x1ee)]){const _0x4cfcca=performance[_0x4da533(0x25c)]()-window[_0x4da533(0x2d5)][_0x4da533(0x2c5)];_0xaab656=new Date(window[_0x4da533(0x2d5)][_0x4da533(0x29e)]+_0x4cfcca),_0x3ff317=_0x4da533(0x23c);}else _0xaab656=new Date(),_0x3ff317=_0x4da533(0x1fa);}const _0x491bf2=document[_0x4da533(0x28d)](_0x4da533(0x1f2));_0x491bf2&&_0x491bf2[_0x4da533(0x217)][_0x4da533(0x208)]()!==''&&(window[_0x4da533(0x21b)]=_0x491bf2['value'][_0x4da533(0x208)]());const _0x1699d=String(_0xaab656[_0x4da533(0x230)]())[_0x4da533(0x2a3)](0x2,'0')+':'+String(_0xaab656[_0x4da533(0x1c7)]())[_0x4da533(0x2a3)](0x2,'0'),_0x565fdb=_0xaab656[_0x4da533(0x26e)]()+_0x4da533(0x2d4)+(_0xaab656[_0x4da533(0x2b1)]()+0x1)+',\x20'+_0xaab656[_0x4da533(0x207)](),_0x2ed75f=[_0x4da533(0x1c8),_0x4da533(0x26f),'Thứ\x20Ba',_0x4da533(0x245),_0x4da533(0x1e3),'Thứ\x20Sáu','Thứ\x20Bảy'],_0xfe8f02=_0x2ed75f[_0xaab656[_0x4da533(0x2d1)]()];ctx[_0x4da533(0x1c4)]=_0x4da533(0x282)+_0x3bb817+'px\x20sans-serif',ctx['textBaseline']=_0x4da533(0x1fc),ctx[_0x4da533(0x257)]=_0x4da533(0x2c4),ctx[_0x4da533(0x1d2)](_0x1699d,_0x65bef8,_0x37ebe1);const _0x930f1=ctx[_0x4da533(0x27b)](_0x1699d)[_0x4da533(0x236)];ctx['shadowColor']=_0x4da533(0x20a);const _0x24af2a=_0x65bef8+_0x930f1+_0x3bb817*0.2;ctx['fillStyle']=_0x4da533(0x1cd),ctx[_0x4da533(0x275)](_0x24af2a,_0x37ebe1+_0x3bb817*0.1,Math[_0x4da533(0x290)](0x3,_0x3bb817*0.04),_0x3bb817*0.8),ctx[_0x4da533(0x250)]=_0x4da533(0x1e6)+_0x1892f0+')';const _0x40f2cd=Math[_0x4da533(0x1f5)](_0x3bb817*0.35);ctx[_0x4da533(0x1c4)]=_0x40f2cd+_0x4da533(0x1d3),ctx['fillStyle']='white';const _0x52aea4=_0x24af2a+_0x3bb817*0.2;ctx[_0x4da533(0x1d2)](_0x565fdb,_0x52aea4,_0x37ebe1+_0x3bb817*0.05),ctx[_0x4da533(0x1d2)](_0xfe8f02,_0x52aea4,_0x37ebe1+_0x3bb817*0.5);const _0x3c011c=locationInput[_0x4da533(0x217)]['trim']();let _0x297ec7=_0x37ebe1+_0x3bb817+_0x3bb817*0.2;_0x3c011c!==''&&(ctx[_0x4da533(0x1d2)](_0x3c011c,_0x65bef8,_0x297ec7),_0x297ec7+=_0x3bb817*0.4);if(window[_0x4da533(0x21b)]&&window[_0x4da533(0x21b)]!==''){const _0x56cd7c=Math[_0x4da533(0x1f5)](_0x3bb817*0.35);ctx[_0x4da533(0x1c4)]=_0x4da533(0x22f)+_0x56cd7c+_0x4da533(0x1d3),ctx[_0x4da533(0x257)]=_0x4da533(0x268),ctx[_0x4da533(0x1d2)]('📍\x20Tọa\x20độ:\x20'+window[_0x4da533(0x21b)],_0x65bef8,_0x297ec7),_0x297ec7+=_0x3bb817*0.4;}const _0x290d75=document[_0x4da533(0x28d)](_0x4da533(0x22a));if(_0x290d75&&_0x290d75[_0x4da533(0x217)]!==''&&_0x290d75[_0x4da533(0x217)]!=='none'){const _0xdeae55=Math[_0x4da533(0x1f5)](_0x3bb817*0.4);ctx['font']=_0x4da533(0x282)+_0xdeae55+_0x4da533(0x1d3),ctx['fillStyle']=_0x4da533(0x222),ctx[_0x4da533(0x1d2)](''+_0x290d75[_0x4da533(0x217)],_0x65bef8,_0x297ec7),_0x297ec7+=_0x3bb817*0.55;}const _0x5d2f71=customTextInput[_0x4da533(0x217)][_0x4da533(0x208)]();if(_0x5d2f71!==''){const _0x2ae6e2=Math['floor'](_0x3bb817*0.45);ctx[_0x4da533(0x1c4)]=_0x4da533(0x282)+_0x2ae6e2+_0x4da533(0x1d3);const _0x5e1862=''+_0x5d2f71,_0x2b43ca=ctx['measureText'](_0x5e1862)[_0x4da533(0x236)],_0x1dd840=_0x3bb817*0.12,_0x28ae2a=_0x3bb817*0.05;ctx[_0x4da533(0x250)]=_0x4da533(0x20a),ctx[_0x4da533(0x257)]=_0x4da533(0x2a4),ctx[_0x4da533(0x275)](_0x65bef8-_0x1dd840,_0x297ec7-_0x28ae2a,_0x2b43ca+_0x1dd840*0x2,_0x2ae6e2+_0x28ae2a*2.2),ctx[_0x4da533(0x257)]=_0x4da533(0x274),ctx[_0x4da533(0x1d2)](_0x5e1862,_0x65bef8,_0x297ec7);}if(evnLogo['complete']&&evnLogo[_0x4da533(0x236)]>0x0){const _0x59b518=_0x3bb817*3.5,_0x1aa71e=evnLogo[_0x4da533(0x231)]/evnLogo[_0x4da533(0x236)],_0x4303c0=_0x59b518*_0x1aa71e,_0x38a77c=_0x65bef8,_0x5f3190=canvas[_0x4da533(0x231)]*0.04;ctx['shadowColor']=_0x4da533(0x20a),ctx[_0x4da533(0x2ac)](evnLogo,_0x38a77c,_0x5f3190,_0x59b518,_0x4303c0);}let _0x207976=_0x4da533(0x265);if(window[_0x4da533(0x21b)]&&window[_0x4da533(0x21b)]!==''){const _0x7c19e3=window[_0x4da533(0x21b)][_0x4da533(0x23f)](/\s/g,'');_0x207976=_0x4da533(0x225)+_0x7c19e3;}const _0x325a35=document['getElementById']('stationSelect'),_0x8508fa=_0x325a35&&_0x325a35[_0x4da533(0x217)]!=='none'?_0x325a35[_0x4da533(0x217)]:_0x4da533(0x270),_0x2c9b1b=customTextInput[_0x4da533(0x217)][_0x4da533(0x208)]()||_0x4da533(0x215),_0xd5c848=_0x4da533(0x206)+_0x8508fa+_0x4da533(0x2ca)+_0x2c9b1b+'\x0a-\x20Lúc:\x20'+_0x1699d+'\x20-\x20'+_0x565fdb+_0x3ff317+'\x0a-\x20Vị\x20trí:\x20'+_0x207976,_0x21e288=unescape(encodeURIComponent(_0xd5c848)),_0x41e7a0=new QRious({'value':_0x21e288,'size':0x12c,'background':_0x4da533(0x2c4),'foreground':_0x4da533(0x1ed),'level':'M'}),_0x3473c2=_0x3bb817*1.5,_0x3b9afe=canvas[_0x4da533(0x236)]*(_0x4b4285(_0x4da533(0x2cc))/0x64),_0xc09f44=canvas[_0x4da533(0x231)]*(_0x4b4285('logoY')/0x64)-_0x3473c2;ctx[_0x4da533(0x250)]=_0x4da533(0x20a),ctx['fillStyle']='white',ctx['fillRect'](_0x3b9afe-0x4,_0xc09f44-0x4,_0x3473c2+0x8,_0x3473c2+0x8),ctx['drawImage'](_0x41e7a0['canvas'],_0x3b9afe,_0xc09f44,_0x3473c2,_0x3473c2);const _0x21ebf6=Math[_0x4da533(0x1f5)](_0x3bb817*0.28);ctx[_0x4da533(0x1c4)]='bold\x20'+_0x21ebf6+'px\x20sans-serif',ctx[_0x4da533(0x257)]='#ffffff',ctx[_0x4da533(0x2af)]=_0x4da533(0x210),ctx[_0x4da533(0x1d2)]('Quét\x20để\x20Xác\x20thực',_0x3b9afe+_0x3473c2/0x2,_0xc09f44+_0x3473c2+_0x3bb817*0.35),ctx[_0x4da533(0x2af)]='left';}const GOOGLE_SCRIPT_URL='https://script.google.com/macros/s/AKfycbynmSb_cktvwmeeYi8uDbe8RdAueA0FYan0P5ppPAxvA3dDMOylNezp-zUO1P_lcxyb/exec';let offlineDB;const requestDB=indexedDB[_0x242d36(0x20d)]('NptSmartCamDB',0x1);function _0x4e02(_0x1a6ea1,_0x48e308){_0x1a6ea1=_0x1a6ea1-0x1bb;const _0x5a3027=_0x5a30();let _0x4e0255=_0x5a3027[_0x1a6ea1];return _0x4e0255;}requestDB[_0x242d36(0x249)]=_0x3a4ea7=>{const _0x489576=_0x242d36;offlineDB=_0x3a4ea7[_0x489576(0x1ea)][_0x489576(0x227)],!offlineDB[_0x489576(0x216)][_0x489576(0x251)](_0x489576(0x2c6))&&offlineDB[_0x489576(0x234)](_0x489576(0x2c6),{'keyPath':'id'});},requestDB['onsuccess']=_0x3a5c98=>{const _0x4e0b04=_0x242d36;offlineDB=_0x3a5c98[_0x4e0b04(0x1ea)][_0x4e0b04(0x227)],syncOfflineQueue();};function saveToOfflineQueue(_0x210de4){const _0xd8bfec=_0x242d36;if(!offlineDB)return;const _0x18ab32=offlineDB[_0xd8bfec(0x204)](_0xd8bfec(0x2c6),_0xd8bfec(0x283));_0x18ab32[_0xd8bfec(0x276)](_0xd8bfec(0x2c6))['put']({'id':Date['now'](),'payload':_0x210de4}),console['log'](_0xd8bfec(0x2b2));}function syncOfflineQueue(){const _0x5b2ca1=_0x242d36;if(!navigator['onLine']||!offlineDB)return;const _0x1a1bea=offlineDB[_0x5b2ca1(0x204)](_0x5b2ca1(0x2c6),_0x5b2ca1(0x248)),_0x5d54b6=_0x1a1bea[_0x5b2ca1(0x276)](_0x5b2ca1(0x2c6)),_0x5219c5=_0x5d54b6[_0x5b2ca1(0x27d)]();_0x5219c5[_0x5b2ca1(0x2d3)]=()=>{const _0x4f31e2=_0x5b2ca1,_0x44576b=_0x5219c5['result'];if(_0x44576b['length']>0x0)console[_0x4f31e2(0x1bd)](_0x4f31e2(0x1df)+_0x44576b[_0x4f31e2(0x221)]+_0x4f31e2(0x1ec));_0x44576b[_0x4f31e2(0x2bf)](_0x45b216=>{const _0x9f93fb=_0x4f31e2;fetch(GOOGLE_SCRIPT_URL,{'method':'POST','headers':{'Content-Type':'text/plain;charset=utf-8'},'body':JSON[_0x9f93fb(0x1ca)](_0x45b216[_0x9f93fb(0x291)])})[_0x9f93fb(0x1f3)](_0x2557dc=>_0x2557dc['text']())['then'](()=>{const _0x5323c2=_0x9f93fb;offlineDB[_0x5323c2(0x204)](_0x5323c2(0x2c6),_0x5323c2(0x283))[_0x5323c2(0x276)](_0x5323c2(0x2c6))[_0x5323c2(0x23e)](_0x45b216['id']),console['log']('Đã\x20đồng\x20bộ\x20bù\x20thành\x20công:',_0x45b216[_0x5323c2(0x291)]['fileName']);})[_0x9f93fb(0x1db)](_0xf30276=>console[_0x9f93fb(0x1bd)](_0x9f93fb(0x1c3),_0xf30276));});};}window['addEventListener'](_0x242d36(0x288),syncOfflineQueue),document[_0x242d36(0x28d)](_0x242d36(0x29b))[_0x242d36(0x1d6)](_0x242d36(0x1cf),function(){const _0x2c2226=_0x242d36,_0x23c169=this,_0x158ede=_0x23c169[_0x2c2226(0x2b0)];_0x23c169[_0x2c2226(0x2b0)]='⏳\x20Đang\x20xử\x20lý...',canvas[_0x2c2226(0x263)](async function(_0xfb4067){const _0x192257=_0x2c2226;if(!_0xfb4067){alert('Có\x20lỗi\x20xảy\x20ra\x20khi\x20xử\x20lý\x20ảnh!'),_0x23c169[_0x192257(0x2b0)]=_0x158ede;return;}let _0x31a632=document[_0x192257(0x28d)]('stationSelect')?document['getElementById'](_0x192257(0x22a))['value']:_0x192257(0x261);if(_0x31a632===_0x192257(0x2ae))_0x31a632='AnhThuong';const _0x10a85b='Timemark_'+_0x31a632+'_'+new Date()[_0x192257(0x2a8)]()+'.jpg',_0x3bb733=new File([_0xfb4067],_0x10a85b,{'type':_0x192257(0x2c3)}),_0x823f9f=canvas['toDataURL'](_0x192257(0x2c3),0.95),_0x59cf3d={'fileName':_0x10a85b,'mimeType':_0x192257(0x2c3),'base64':_0x823f9f};let _0x1d3e75=_0x192257(0x1f6);navigator[_0x192257(0x24f)]?fetch(GOOGLE_SCRIPT_URL,{'method':'POST','headers':{'Content-Type':_0x192257(0x269)},'body':JSON[_0x192257(0x1ca)](_0x59cf3d)})[_0x192257(0x1f3)](_0x1d921a=>_0x1d921a['text']())[_0x192257(0x1f3)](_0x1cc613=>console[_0x192257(0x1bd)](_0x192257(0x1d5),_0x1cc613))['catch'](_0xb15daa=>{const _0x212c3d=_0x192257;console[_0x212c3d(0x1bd)](_0x212c3d(0x266),_0xb15daa),saveToOfflineQueue(_0x59cf3d),_0x1d3e75=_0x212c3d(0x1f7);}):(saveToOfflineQueue(_0x59cf3d),_0x1d3e75=_0x192257(0x1f7));const _0xe0a0d0=()=>{const _0x27060d=_0x192257;_0x23c169[_0x27060d(0x2b0)]=_0x1d3e75,_0x23c169['style'][_0x27060d(0x1c2)]=_0x27060d(0x2a4),setTimeout(()=>{const _0x44f628=_0x27060d;_0x23c169[_0x44f628(0x2b0)]=_0x158ede,_0x23c169['style'][_0x44f628(0x1c2)]='',resetToFreshState(),bottomMenu[_0x44f628(0x1e5)][_0x44f628(0x262)]=_0x44f628(0x203),document[_0x44f628(0x28d)](_0x44f628(0x255))[_0x44f628(0x217)]='',lastUsedMode==='webcam'&&startCameraBtn['click']();},0x5dc);},_0x92240e=/iPad|iPhone|iPod/[_0x192257(0x21a)](navigator[_0x192257(0x1ce)])&&!window[_0x192257(0x1e2)],_0x5ecc94=/^((?!chrome|android).)*safari/i['test'](navigator[_0x192257(0x1ce)]);try{if((_0x92240e||_0x5ecc94)&&navigator[_0x192257(0x295)]&&navigator['canShare']({'files':[_0x3bb733]}))await navigator[_0x192257(0x1c5)]({'files':[_0x3bb733],'title':_0x192257(0x277)}),_0xe0a0d0();else{const _0x19ff14=window[_0x192257(0x2bc)][_0x192257(0x27f)](_0xfb4067),_0x7a881a=document[_0x192257(0x24c)]('a');_0x7a881a[_0x192257(0x2aa)]=_0x19ff14,_0x7a881a[_0x192257(0x2b9)]=_0x10a85b,document['body']['appendChild'](_0x7a881a),_0x7a881a[_0x192257(0x1cf)](),document[_0x192257(0x25d)][_0x192257(0x2c1)](_0x7a881a),window[_0x192257(0x2bc)][_0x192257(0x2b5)](_0x19ff14),_0xe0a0d0();}}catch(_0x53dd44){_0x23c169[_0x192257(0x2b0)]=_0x158ede;}},_0x2c2226(0x2c3),0.95);});const openMapBtn=document[_0x242d36(0x28d)](_0x242d36(0x2ce));openMapBtn&&openMapBtn[_0x242d36(0x1d6)](_0x242d36(0x1cf),_0x848e0c=>{const _0x1e11fb=_0x242d36;_0x848e0c[_0x1e11fb(0x211)](),window['open'](_0x1e11fb(0x279),_0x1e11fb(0x237));});
+    </script>
+</body>
+</html>
